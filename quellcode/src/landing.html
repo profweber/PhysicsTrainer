@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PhysicsTrainer</title>
+<meta name="description" content="Physik-Übungen mit Schreibfeld, Foto-Upload, automatischer Ergebnisprüfung und KI-Tutor (Vorführprototyp, Hochschule Trier)">
+<link rel="stylesheet" href="ohne-tutor/fonts/fonts.css">
+<style>
+/*LANDING_CSS*/
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="mark" aria-hidden="true">PT<span>v1.0</span></div>
+    <div class="name">
+      <h1>PhysicsTrainer</h1>
+      <p>Übungen zum Skript „Physik für Ingenieurinnen und Ingenieure“</p>
+    </div>
+  </header>
+
+  <div class="body">
+    <p class="lead">Physik üben – mit Stift, Foto oder Tastatur, direkt im Browser.</p>
+    <ul>
+      <li>Aufgaben zu Kinematik, Dynamik, Thermodynamik und Spezieller Relativitätstheorie, in drei Schwierigkeitsstufen</li>
+      <li>Jede Aufgabe mit eigenen Zahlen – abschreiben hilft nicht, wiederholen schon</li>
+      <li>Rechenweg im Schreibfeld (Tablet mit Stift) oder als Foto vom Papier</li>
+      <li>Zwischen- und Endergebnisse mit Einheit – automatisch geprüft, typische Fehler wie Vorzeichen, Zehnerpotenz oder Faktor 2 werden erkannt</li>
+      <li>KI-Tutor, der den handschriftlichen Rechenweg liest, den ersten Fehler findet und Tipps gibt, ohne die Lösung zu verraten</li>
+    </ul>
+    <a class="cta" href="/*CLAUDE_URL*/">PhysicsTrainer öffnen <span aria-hidden="true">→</span></a>
+    <div class="note">
+      <p><b>So starten Sie – einmalig, in einer Minute:</b></p>
+      <ol>
+        <li><b>PhysicsTrainer öffnen</b> (Knopf oben). Er läuft auf claude.ai; Sie brauchen ein kostenloses Claude-Konto (Anleitung unten).</li>
+        <li>Ganz oben im Fenster, in der Leiste <b>über</b> dem Trainer, steht links der Titel „PhysicsTrainer“. Dort auf <b>„Kopieren“</b> klicken. Nur in Ihrer eigenen Kopie lässt claude.ai den KI-Tutor zu.</li>
+        <li>In Ihrer Kopie üben und ein <b>Lesezeichen</b> darauf setzen. Bei Ihrer ersten Anfrage an den Tutor fragt Claude einmal, ob die Seite Ihr Konto nutzen und Bilder senden darf – bitte erlauben.</li>
+      </ol>
+      <p class="small">Der KI-Tutor nutzt Ihr eigenes Konto und Kontingent; Bilder Ihres Rechenwegs sieht er nur, wenn Sie ihn prüfen lassen. Fortschritt und Schreibfeld werden nur in Ihrem Browser gespeichert.</p>
+    </div>
+    <details class="howto">
+      <summary>Noch kein Claude-Konto? So legen Sie eines an</summary>
+      <ol>
+        <li>Klicken Sie oben auf <b>PhysicsTrainer öffnen</b> oder öffnen Sie <a href="https://claude.ai" rel="noopener">claude.ai</a>. Ohne Anmeldung erscheint dort die Anmeldeseite.</li>
+        <li>Melden Sie sich mit Ihrem <b>Google-Konto</b> an oder geben Sie Ihre <b>E-Mail-Adresse</b> ein (z.B. die der Hochschule). Sie bekommen dann einen Anmeldelink per E-Mail – ein Passwort gibt es nicht.</li>
+        <li>Beim ersten Mal bestätigen Sie Ihre <b>Handynummer</b> mit einem Code per SMS (Festnetz- und Internet-Telefonnummern funktionieren nicht).</li>
+        <li>Der kostenlose Plan genügt. Danach öffnet sich der PhysicsTrainer – falls nicht, klicken Sie hier einfach noch einmal auf den Knopf. Weiter geht es mit Schritt 2 oben („Kopieren“).</li>
+      </ol>
+      <p>Voraussetzung ist ein Mindestalter von 18 Jahren. Das Konto besteht bei Anthropic, dem Anbieter von Claude; es gelten dessen Nutzungsbedingungen und Datenschutzhinweise. Wer das nicht möchte, nutzt die Version ohne KI-Tutor (unten).</p>
+    </details>
+    <p class="alt">Ohne Claude-Konto: <a href="ohne-tutor/">Version ohne KI-Tutor</a> – alle Aufgaben, Schreibfeld und Ergebnisprüfung, vollständig in Ihrem Browser, keine Daten an Dritte.</p>
+  </div>
+
+  <footer>Vorführprototyp · Hochschule Trier · PhysicsTrainer v1.0 · <a href="https://github.com/profweber/PhysicsTrainer">GitHub</a></footer>
+</main>
+</body>
+</html>

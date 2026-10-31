@@ -1,0 +1,2046 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PhysicsTrainer (ohne KI-Tutor)</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="katex/katex.min.css">
+<script src="katex/katex.min.js"></script>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: Zeichnungs-Schriftfeld als Kopf, darunter drei Spalten – Kapitel | Aufgabe + Editor | KI-Tutor. Millimeterpapier als Grund. */
+:root {
+  --paper: #edf1ef;
+  --sheet: #fbfcfb;
+  --ink: #17242c;
+  --muted: #586972;
+  --line: #cbd6d2;
+  --grid: rgba(23, 36, 44, .045);
+  --accent: #2344c4;
+  --accent-soft: #e3e8fb;
+  --accent-ink: #ffffff;
+  --hi: #f6dc7a;
+  --ok: #1b7546;
+  --ok-soft: #e1f2e8;
+  --warn: #9a5d06;
+  --warn-soft: #fbf0dc;
+  --bad: #b3232b;
+  --bad-soft: #fbe5e6;
+  --code-bg: #f5f7f6;
+  --code-ink: #1e2a31;
+  --tk-kw: #8b1fa6;
+  --tk-str: #1b7546;
+  --tk-num: #b2520b;
+  --tk-com: #627177;
+  --field: #7f8e93;
+  --tk-fn: #2344c4;
+  --tk-bi: #0f6f86;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e1417; --sheet: #151d21; --ink: #e1e8e5; --muted: #93a39d; --line: #283439; --grid: rgba(225, 232, 229, .035);
+    --accent: #93a8ff; --accent-soft: #1d2747; --accent-ink: #0e1417; --hi: #5f5216;
+    --ok: #63cf93; --ok-soft: #12291d; --warn: #e7ae55; --warn-soft: #2c220f; --bad: #ff8086; --bad-soft: #321619;
+    --code-bg: #10171a; --code-ink: #dfe7e4;
+    --tk-kw: #d99cf0; --tk-str: #8fd8a9; --tk-num: #f2ad6f; --tk-com: #7d8e95; --field: #617176; --tk-fn: #93a8ff; --tk-bi: #6fd0e2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e1417; --sheet: #151d21; --ink: #e1e8e5; --muted: #93a39d; --line: #283439; --grid: rgba(225, 232, 229, .035);
+  --accent: #93a8ff; --accent-soft: #1d2747; --accent-ink: #0e1417; --hi: #5f5216;
+  --ok: #63cf93; --ok-soft: #12291d; --warn: #e7ae55; --warn-soft: #2c220f; --bad: #ff8086; --bad-soft: #321619;
+  --code-bg: #10171a; --code-ink: #dfe7e4;
+  --tk-kw: #d99cf0; --tk-str: #8fd8a9; --tk-num: #f2ad6f; --tk-com: #7d8e95; --field: #617176; --tk-fn: #93a8ff; --tk-bi: #6fd0e2;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 8px 8px;
+  color: var(--ink);
+  font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 32px;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, pre, kbd { font-family: var(--font-mono); font-size: .88em; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: .01em; }
+
+/* ---------- Kopf: Schriftfeld */
+.titleblock {
+  max-width: 1560px; margin: 0 auto 12px;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: stretch;
+  border: 1.5px solid var(--ink); background: var(--sheet);
+}
+.tb-mark {
+  display: grid; place-items: center; padding: 6px 14px; border-right: 1.5px solid var(--ink);
+  font: 700 22px/1 var(--font-display); letter-spacing: .04em;
+}
+.tb-mark span { display: block; font-size: 10px; letter-spacing: .14em; font-weight: 600; color: var(--muted); margin-top: 3px; }
+.tb-name { padding: 8px 14px; min-width: 0; }
+.tb-name h1 { font-size: 22px; line-height: 1.1; font-weight: 700; }
+.tb-name p { margin: 2px 0 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.tb-tools { display: flex; align-items: stretch; border-left: 1.5px solid var(--ink); }
+.tb-cell { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 12px; border-left: 1px solid var(--line); }
+.tb-cell:first-child { border-left: 0; }
+.tb-label { font: 600 11px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.tb-value { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; white-space: nowrap; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); margin-right: 6px; vertical-align: 1px; }
+.dot.ready { background: var(--ok); }
+.dot.err { background: var(--bad); }
+
+.tb-cell .seg { align-self: flex-start; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--sheet); }
+.seg button { border: 0; background: transparent; padding: 3px 10px; cursor: pointer; font-weight: 600; font-size: 13px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+
+/* ---------- Grundraster */
+.app {
+  max-width: 1560px; margin: 0 auto;
+  display: grid; gap: 12px;
+  grid-template-columns: 280px minmax(0, 1fr) 380px;
+  align-items: start;
+}
+.panel { background: var(--sheet); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
+.panel-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.panel-h h2 { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.panel-b { padding: 12px 14px; }
+.eyebrow { font: 600 11px/1.2 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+/* ---------- Kapitel */
+.side { position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); display: grid; gap: 12px; align-content: start;
+  max-height: calc(100vh - 24px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 1px; margin: -1px; }
+.chapters { list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px; }
+.chap { border-radius: var(--r); }
+.chap-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 8px; padding: 6px 6px; border-radius: var(--r); }
+.chap-row > label { display: grid; place-items: center; padding: 4px; margin: -4px; cursor: pointer; }
+.chap-open { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto 14px; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; padding: 0; text-align: left; cursor: pointer; color: inherit; border-radius: 4px; }
+.chap-open .caret { color: var(--muted); font-size: 11px; transition: transform .15s; }
+.chap-open[aria-expanded="true"] .caret { transform: rotate(90deg); }
+.chap-row:hover { background: var(--code-bg); }
+.chap-row label.chap-label { display: contents; }
+.chap-row input { margin: 0; accent-color: var(--accent); width: 16px; height: 16px; }
+.chap-num { font: 700 15px/1 var(--font-display); border: 1.5px solid var(--ink); height: 26px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.chap-title { font-size: 14px; line-height: 1.25; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
+.chap-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chap-bar { grid-column: 2 / 3; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.chap-bar i { display: block; height: 100%; background: var(--ok); }
+.chap.off .chap-num { border-color: var(--line); color: var(--muted); }
+.chap.off .chap-title { color: var(--muted); }
+.ex-list { list-style: none; margin: 2px 0 6px 44px; padding: 0; display: grid; gap: 1px; }
+.ex-list button { width: 100%; text-align: left; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 6px; align-items: center; border: 0; background: transparent; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+.ex-list button:hover { background: var(--code-bg); }
+.ex-list button > span:nth-child(2) { overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; min-width: 0; }
+.ex-list button.off-level { color: var(--muted); }
+.ex-list button.off-level .pips i.on { background: var(--muted); border-color: var(--muted); }
+.ex-list button[aria-current="true"] { background: var(--accent-soft); }
+.ex-state { width: 10px; height: 10px; border: 1.5px solid var(--muted); border-radius: 50%; }
+.ex-state.solved { background: var(--ok); border-color: var(--ok); }
+.ex-state.tried { border-color: var(--warn); background: var(--warn-soft); }
+.ex-state.peek { border-color: var(--muted); background: var(--line); }
+.pips { display: inline-flex; gap: 2px; }
+.pips i { width: 6px; height: 10px; border: 1px solid var(--muted); }
+.pips i.on { background: var(--ink); border-color: var(--ink); }
+.ex-ai { font-size: 10px; font-weight: 700; color: var(--accent); margin-left: 4px; }
+
+.field { display: grid; gap: 6px; }
+.field + .field { margin-top: 12px; }
+.switch { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); }
+.switch input { margin-top: 3px; accent-color: var(--accent); }
+.levelnote { font-size: 13px; color: var(--muted); margin: 0; }
+.levelnote b { color: var(--ink); }
+
+/* ---------- Aufgabe */
+.main { display: grid; gap: 12px; min-width: 0; }
+.task-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 14px 16px 6px; }
+.task-head h2 { font-size: 26px; font-weight: 700; line-height: 1.1; flex: 1 1 260px; }
+.tag { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font: 600 12px/1.2 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tag .pips i { height: 11px; }
+.tag-lvl { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.badge-ai { font: 600 11px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); padding: 3px 6px; border-radius: 3px; }
+.task-body { padding: 4px 16px 12px; max-width: 78ch; }
+.task-body p { margin: 0 0 .6em; }
+.task-body ul, .task-body ol { margin: 0 0 .6em; padding-left: 1.3em; }
+.task-body code, .md code { background: var(--code-bg); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+.refs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0 16px 14px; }
+.ref {
+  display: inline-flex; align-items: baseline; gap: 6px; text-decoration: none; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 4px; font-size: 13px; background: var(--sheet);
+}
+.ref:hover { border-color: var(--accent); }
+.ref b { font: 700 11px/1 var(--font-mono); background: var(--ink); color: var(--sheet); border-radius: 999px; padding: 3px 6px; }
+.ref::after { content: "↗"; color: var(--muted); font-size: 11px; }
+
+/* ---------- Editor */
+.editor-wrap { border-top: 1px solid var(--line); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--sheet); }
+.toolbar .grow { flex: 1; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--sheet);
+  padding: 6px 12px; border-radius: var(--r); cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap;
+}
+.btn:hover { border-color: var(--ink); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+#subtitle a { color: var(--accent); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); text-underline-offset: 2px; }
+#subtitle a:hover { text-decoration-color: currentColor; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.dark { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--ink); border-color: var(--line); }
+.kbd { font: 500 11px/1 var(--font-mono); opacity: .7; }
+
+.ed { --ed-lh: 21px; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); background: var(--code-bg); font: 14px/var(--ed-lh) var(--font-mono); }
+.ed-gutter { padding: 12px 8px 12px 12px; text-align: right; color: var(--tk-com); user-select: none; border-right: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: pre; min-width: 3.2em; }
+.ed-gutter .err { color: var(--bad); font-weight: 600; }
+.ed-area { position: relative; min-width: 0; overflow: hidden; }
+.ed-area pre, .ed-area textarea {
+  margin: 0; padding: 12px 14px; border: 0; font: inherit; white-space: pre; tab-size: 4; letter-spacing: 0;
+  width: 100%; min-height: 100%;
+}
+.ed-area pre { position: absolute; inset: 0; color: var(--code-ink); pointer-events: none; overflow: hidden; }
+.ed-area textarea {
+  position: relative; display: block; resize: none; background: transparent; color: transparent; caret-color: var(--ink);
+  overflow-x: auto; overflow-y: hidden; outline: none;
+}
+.ed-area textarea::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); color: transparent; }
+.ed:has(textarea:focus-visible) { box-shadow: inset 0 0 0 2px var(--accent); }
+.tk-kw { color: var(--tk-kw); font-weight: 600; }
+.tk-str { color: var(--tk-str); }
+.tk-num { color: var(--tk-num); }
+.tk-com { color: var(--tk-com); font-style: italic; }
+.tk-fn { color: var(--tk-fn); font-weight: 600; }
+.tk-bi { color: var(--tk-bi); }
+.tk-self { color: var(--tk-kw); font-style: italic; }
+.errline { position: absolute; left: 0; right: 0; height: var(--ed-lh, 21px); background: var(--bad-soft); pointer-events: none; }
+
+.io { display: grid; grid-template-columns: minmax(0, 1fr) 200px; border-top: 1px solid var(--line); }
+.io > div { min-width: 0; }
+.io .io-out { border-right: 1px solid var(--line); }
+.io-h { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+.console { margin: 0; padding: 10px 12px; font: 13px/1.5 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow: auto; min-height: 64px; }
+.console .stderr { color: var(--bad); }
+.console .muted { color: var(--muted); }
+#stdin { width: 100%; height: calc(100% - 31px); min-height: 72px; border: 0; padding: 10px 12px; font: 13px/1.5 var(--font-mono); resize: vertical; background: transparent; }
+
+/* ---------- Ergebnisse */
+.verdict { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.verdict strong { font: 700 18px/1.1 var(--font-display); letter-spacing: .02em; }
+.verdict.ok { background: var(--ok-soft); color: var(--ok); }
+.verdict.bad { background: var(--bad-soft); color: var(--bad); }
+.verdict.warn { background: var(--warn-soft); color: var(--warn); }
+.verdict p { margin: 0; color: var(--ink); font-size: 14px; }
+.meter { margin-left: auto; font: 700 20px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.checks { list-style: none; margin: 0; padding: 8px 16px 12px; display: grid; gap: 4px; }
+.checks li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; font-size: 14px; }
+.checks li::before { font-weight: 700; }
+.checks li.ok::before { content: "✓"; color: var(--ok); }
+.checks li.no::before { content: "✗"; color: var(--bad); }
+.notes { padding: 0 16px 14px; display: grid; gap: 6px; }
+.note { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 6px 10px; font-size: 14px; border-radius: 0 4px 4px 0; }
+.note.absent, .note.forbidden { border-color: var(--bad); background: var(--bad-soft); }
+.note.missing { border-color: var(--accent); background: var(--accent-soft); }
+.note a { margin-left: 4px; }
+.solution { margin: 0 16px 16px; border: 1px dashed var(--line); border-radius: var(--r); }
+.solution summary { cursor: pointer; padding: 8px 12px; font-weight: 600; }
+.codeblock { margin: 0; padding: 10px 12px; background: var(--code-bg); font: 13px/1.5 var(--font-mono); overflow-x: auto; white-space: pre; border-radius: 0 0 var(--r) var(--r); }
+
+/* ---------- KI-Tutor */
+.tutor { position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; max-height: calc(100vh - 24px); }
+.tutor-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.tutor-actions .btn { font-size: 13px; padding: 5px 10px; }
+.hintmeter { display: inline-flex; gap: 2px; margin-left: 2px; }
+.hintmeter i { width: 5px; height: 9px; border: 1px solid currentColor; opacity: .5; }
+.hintmeter i.on { background: currentColor; opacity: 1; }
+.chat { flex: 1; overflow-y: auto; padding: 12px 14px; display: grid; gap: 10px; align-content: start; min-height: 200px; }
+.msg { font-size: 14px; line-height: 1.5; max-width: 100%; min-width: 0; }
+.msg.user { justify-self: end; background: var(--accent-soft); border-radius: 10px 10px 2px 10px; padding: 6px 10px; max-width: 88%; }
+.msg.ai { border-left: 2px solid var(--ink); padding-left: 10px; }
+.msg.ai .who { font: 600 11px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.msg.sys { color: var(--muted); font-size: 13px; font-style: italic; }
+.md p { margin: 0 0 .5em; }
+.md ul, .md ol { margin: 0 0 .5em; padding-left: 1.2em; }
+.md pre { margin: 0 0 .5em; padding: 8px 10px; background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; font: 12.5px/1.45 var(--font-mono); white-space: pre; }
+.md pre code { background: none; border: 0; padding: 0; }
+.md .ref { font-size: 12px; margin: 1px 0; }
+.thinking { color: var(--muted); font-style: italic; }
+.chat-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.chat-form textarea { resize: none; height: 40px; border: 1px solid var(--field); border-radius: var(--r); padding: 8px 10px; background: var(--sheet); font-size: 14px; }
+.ai-off { padding: 14px; font-size: 14px; color: var(--muted); }
+.gen { padding: 10px 14px; border-top: 1px solid var(--line); display: grid; gap: 6px; }
+.gen p { margin: 0; font-size: 13px; color: var(--muted); }
+.progress { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: var(--r); padding: 10px 12px; font-size: 13.5px; display: grid; gap: 6px; }
+.progress .row { display: flex; align-items: center; gap: 8px; }
+.progress .row strong { font-weight: 600; }
+.progress .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; color: var(--muted); }
+.progress .steps li.now { color: var(--ink); font-weight: 600; }
+.progress .steps li.done { color: var(--ok); }
+.progress .steps li::before { content: "○ "; }
+.progress .steps li.now::before { content: "▸ "; color: var(--accent); }
+.progress .steps li.done::before { content: "✓ "; }
+.progress .hint { color: var(--muted); font-size: 12.5px; }
+.progress .btn { justify-self: start; font-size: 13px; padding: 4px 10px; }
+.spin { display: inline-block; flex: none; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; color: var(--accent); }
+.thinking .spin { width: 11px; height: 11px; margin-right: 6px; vertical-align: -1px; }
+.thinking .secs { font-style: normal; }
+.check-status.busy { color: var(--muted); background: var(--code-bg); }
+
+dialog { border: 1.5px solid var(--ink); border-radius: var(--r); background: var(--sheet); color: var(--ink); max-width: min(640px, calc(100vw - 32px)); padding: 0; }
+dialog::backdrop { background: rgba(10, 16, 20, .45); }
+dialog .panel-b p { margin: 0 0 .7em; }
+dialog .panel-b ul { margin: 0 0 .7em; padding-left: 1.2em; }
+
+.empty { padding: 24px 16px; color: var(--muted); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ---------- Klausurtraining */
+.seg-wide { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+.seg-wide button { padding: 6px 8px; font-size: 14px; }
+.seg-fill { width: 100%; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.exam-timer { font: 700 40px/1 var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.exam-timer.low { color: var(--bad); }
+.exam-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.exam-nav { list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px; }
+.exam-nav button { width: 100%; text-align: left; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; border: 0; background: transparent; padding: 6px; border-radius: var(--r); cursor: pointer; font-size: 14px; }
+.exam-nav button:hover { background: var(--code-bg); }
+.exam-nav button[aria-current="true"] { background: var(--accent-soft); }
+.exam-nav .num { font: 700 15px/1 var(--font-display); border: 1.5px solid var(--ink); height: 26px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.exam-nav .meta { display: block; font-size: 12px; color: var(--muted); }
+.exam-nav .state { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.exam-nav .state.edited { color: var(--ok); }
+.exam-nav .state.full { color: var(--ok); font-weight: 600; }
+.exam-nav .state.part { color: var(--warn); font-weight: 600; }
+.exam-nav .state.zero { color: var(--bad); font-weight: 600; }
+.confirm { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--bad); background: var(--bad-soft); border-radius: var(--r); font-size: 14px; }
+.confirm .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn.danger { background: var(--bad); border-color: var(--bad); color: var(--sheet); }
+.history { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.history li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.history .pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+.history .when { color: var(--muted); font-variant-numeric: tabular-nums; }
+.history .chs { color: var(--muted); overflow-wrap: anywhere; }
+.intro { padding: 16px; max-width: 78ch; }
+.disclaimer { border: 1.5px solid var(--warn); background: var(--warn-soft); border-radius: var(--r); padding: 12px 14px; margin-bottom: 16px; }
+.disclaimer h3 { font: 700 14px/1.2 var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--warn); margin-bottom: 6px; }
+.disclaimer ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.disclaimer li { font-size: 14px; }
+.intro h2 { font-size: 24px; margin-bottom: 8px; }
+.intro p { margin: 0 0 .7em; }
+.intro ul { margin: 0 0 .7em; padding-left: 1.2em; }
+.points-table { border-collapse: collapse; margin: 4px 0 10px; font-size: 14px; }
+.points-table td, .points-table th { border: 1px solid var(--line); padding: 4px 10px; text-align: left; font-variant-numeric: tabular-nums; }
+.points-table th { font: 600 12px/1.2 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.score-head { display: grid; gap: 10px; padding: 16px; border-bottom: 1px solid var(--line); }
+.score-head .big { font: 700 34px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.score-head .big small { font-size: 18px; color: var(--muted); font-weight: 600; }
+.bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.score-head p { margin: 0; color: var(--muted); font-size: 14px; }
+.task-res { border-bottom: 1px solid var(--line); }
+.task-res > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 16px; }
+.task-res > summary::-webkit-details-marker { display: none; }
+.task-res > summary .num { font: 700 15px/1 var(--font-display); border: 1.5px solid var(--ink); height: 26px; display: grid; place-items: center; }
+.task-res > summary .pts { font: 700 18px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.task-res .pts.full { color: var(--ok); } .task-res .pts.part { color: var(--warn); } .task-res .pts.zero { color: var(--bad); }
+.task-res .body { padding: 0 16px 14px; display: grid; gap: 8px; }
+.task-res .checks, .task-res .notes { padding: 0; }
+.task-res details.code { border: 1px dashed var(--line); border-radius: var(--r); }
+.task-res details.code summary { cursor: pointer; padding: 6px 10px; font-weight: 600; font-size: 14px; }
+.review-refs { padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* ---------- Ohne KI-Tutor (per Konfiguration abgeschaltet) */
+.no-tutor .tutor { display: none !important; }
+.no-tutor .app { grid-template-columns: 280px minmax(0, 1fr); }
+.note.off { border-color: var(--bad); background: var(--bad-soft); }
+.link-intro { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; font-size: 13.5px; background: var(--code-bg); }
+.link-intro p { margin: 0 0 .4em; } .link-intro p:last-child { margin: 0; }
+.link-mode .tutor-actions .btn::after, .link-mode .chat-form .btn::after { content: " ↗"; }
+.chap-sub { display: block; font-size: 11.5px; color: var(--muted); }
+.chap.pre { display: flex; align-items: center; gap: 8px; margin: 0 6px 4px 30px; padding: 2px 0 8px; border-bottom: 1px dashed var(--line); border-radius: 0; font-size: 12.5px; color: var(--muted); }
+.chap.pre .chap-num { width: 30px; height: 20px; flex: none; border: 1px dashed var(--muted); font-size: 11px; letter-spacing: -.02em; color: var(--muted); }
+
+/* ---------- Bedienhilfen (UX-Überarbeitung) */
+.skip { position: absolute; left: 16px; top: -48px; z-index: 100; background: var(--ink); color: var(--sheet); padding: 8px 14px; border-radius: var(--r); font-weight: 600; text-decoration: none; }
+.skip:focus { top: 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 8px 14px 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend .ex-state { display: inline-block; }
+.check-status { border: 0; background: transparent; padding: 4px 8px; border-radius: var(--r); font-weight: 600; font-size: 13px; cursor: pointer; }
+.check-status:empty { display: none; }
+.check-status.ok { color: var(--ok); background: var(--ok-soft); }
+.check-status.bad { color: var(--bad); background: var(--bad-soft); }
+.check-status.warn { color: var(--warn); background: var(--warn-soft); }
+.btn[aria-busy="true"] { cursor: progress; }
+.btn[aria-busy="true"]::after { content: ""; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn.confirming { border-color: var(--bad); color: var(--bad); background: var(--bad-soft); }
+.welcome { padding: 14px 16px; border-color: var(--accent); }
+.welcome h2 { font-size: 18px; margin-bottom: 6px; }
+.welcome ol { margin: 0 0 10px; padding-left: 1.3em; display: grid; gap: 3px; }
+.welcome p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+.welcome .row { display: flex; flex-wrap: wrap; gap: 8px; }
+dialog > .panel-h { position: sticky; top: 0; z-index: 2; background: var(--sheet); }
+.notice { padding: 12px 16px; border-color: var(--accent); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.notice p { margin: 0; flex: 1 1 320px; font-size: 14px; }
+.notice .row, .xfer .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ai-off .btn { margin-top: 10px; }
+.ai-off .xmsg { display: block; margin-top: 8px; }
+dialog .steps { margin: 0 0 .9em; padding-left: 1.3em; display: grid; gap: 6px; }
+.xfer { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+.xfer h3 { font-size: 15px; margin: 0 0 6px; }
+.xfer [data-xfer-box] { margin-top: 10px; }
+.xfer textarea { display: block; width: 100%; box-sizing: border-box; margin: 4px 0 8px; font: 12px/1.4 var(--font-mono); padding: 6px 8px; border: 1px solid var(--field); border-radius: 4px; background: var(--sheet); color: var(--ink); resize: vertical; word-break: break-all; }
+.xmsg { font-size: 13px; color: var(--muted); }
+.mbar, .drawer-h, .backdrop { display: none; }
+@media (hover: none) { .kbd { display: none; } }
+@media (pointer: coarse) {
+  .btn, .seg button, .check-status { min-height: 44px; }
+  .ex-list button { padding: 9px 6px; }
+  .chap-row { padding: 8px 6px; }
+  .chap-row input, .switch input { width: 20px; height: 20px; }
+  textarea, #stdin, .chat-form textarea { font-size: 16px; }
+  .ed { --ed-lh: 24px; font-size: 16px; }
+}
+
+@media (max-width: 1280px) {
+  .app { grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  .side { grid-row: 1 / span 2; }
+  .tutor { grid-column: 2; position: static; max-height: none; }
+  .chat { max-height: 480px; }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .app { grid-template-rows: none; }
+  .side { position: static; grid-row: auto; max-height: none; overflow: visible; margin: 0; padding: 0; }
+  .tutor { grid-column: 1; }
+  .titleblock { grid-template-columns: auto minmax(0, 1fr); margin-bottom: 8px; }
+  .tb-tools { grid-column: 1 / -1; border-left: 0; border-top: 1.5px solid var(--ink); display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; }
+  .tb-cell { padding: 6px 10px; }
+  .tb-value { white-space: normal; }
+  /* Leiste mit Aufgabenliste und „Nächste Aufgabe“ (nur im Übungsmodus) */
+  .view-exam:not(.exam-running) .tutor { display: none; }
+  .view-practice #mbar-practice, .view-exam #nav-toggle, .view-exam #mbar-next, .view-exam .mbar-info { display: none; }
+  .view-exam:not(.exam-running) .mbar { display: flex; margin: 0 -16px 10px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+  .view-practice .mbar { display: flex; position: sticky; top: 0; z-index: 30; gap: 8px; align-items: center; margin: 0 -16px 10px; padding: 8px 16px;
+    background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .mbar .mbar-info { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .view-practice .side { position: fixed; z-index: 50; top: 0; bottom: 0; left: 0; width: min(380px, 88vw); margin: 0; padding: 12px 12px 24px;
+    overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border-right: 1.5px solid var(--ink);
+    transform: translateX(-105%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; }
+  .view-practice.nav-open .side { transform: none; visibility: visible; transition: transform .2s ease; box-shadow: 0 0 40px rgba(0, 0, 0, .25); }
+  .view-practice .drawer-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px; }
+  .view-practice .drawer-h strong { font: 700 18px/1.2 var(--font-display); }
+  .view-practice.nav-open .backdrop { display: block; position: fixed; inset: 0; z-index: 45; background: rgba(10, 16, 20, .45); }
+  .view-exam:not(.exam-running) .main { order: -1; }
+  .toolbar { padding: 10px 12px; }
+  .task-head { padding: 12px 12px 4px; }
+  .task-body { padding: 4px 12px 10px; }
+  .refs { padding: 0 12px 12px; }
+  .io { grid-template-columns: minmax(0, 1fr); }
+  .io .io-out { border-right: 0; border-bottom: 1px solid var(--line); }
+  .task-head h2 { font-size: 22px; }
+}
+@media (max-width: 860px) { .no-tutor .app { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) {
+  .tb-mark { padding: 6px 10px; font-size: 18px; }
+  .tb-name { padding: 6px 10px; }
+  .tb-name h1 { font-size: 19px; }
+  .tb-name p { font-size: 12px; }
+  .tb-tools { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+  .tb-cell { padding: 6px 8px; }
+  .pyver { display: none; }
+  .mbar .mbar-info { display: none; }
+  .view-practice .mbar { justify-content: space-between; }
+  .io .io-h { padding: 6px 10px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+/* ---------- PhysicsTrainer: Ergänzungen zum CodingTrainer-Design */
+.task-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 16px 14px; }
+.task-actions .note-small { font-size: 13px; color: var(--muted); }
+.checks { padding: 12px 14px; display: grid; gap: 10px; }
+.cp { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(160px, 1.1fr) minmax(0, 1.4fr); gap: 6px 12px; align-items: center; }
+.cp-l { display: flex; flex-direction: column; min-width: 0; }
+.cp-l .sym { font-size: 17px; }
+.cp-l .nm { font-size: 13px; color: var(--muted); }
+.cp input { width: 100%; height: 40px; border: 1px solid var(--field); border-radius: var(--r); padding: 6px 10px; background: var(--sheet); font: 15px/1.2 var(--font-mono); }
+.cp input.ok { border-color: var(--ok); background: var(--ok-soft); }
+.cp input.bad { border-color: var(--bad); }
+.cp input.warn { border-color: var(--warn); }
+.cp-msg { font-size: 13px; min-height: 1.2em; }
+.cp-msg.ok { color: var(--ok); }
+.cp-msg.bad { color: var(--bad); }
+.cp-msg.warn { color: var(--warn); }
+.checks-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); }
+.checks-bar .grow { flex: 1; }
+.unit-help { font-size: 12px; color: var(--muted); padding: 0 14px 10px; }
+
+/* Rechenweg: Schreibfeld, Foto, Upload */
+.work-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.work-tools .sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 4px; }
+.work-tools .grow { flex: 1; }
+.tool { min-width: 40px; height: 36px; border: 1px solid var(--line); border-radius: var(--r); background: var(--sheet); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; font-size: 13px; }
+.tool[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: var(--accent-soft); }
+.tool:disabled { opacity: .45; cursor: default; }
+.swatch { width: 16px; height: 16px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.2); }
+.pageinfo { font: 600 13px/1 var(--font-display); letter-spacing: .06em; color: var(--muted); min-width: 64px; text-align: center; }
+.pad-wrap { padding: 12px 14px; }
+.pad { position: relative; width: 100%; aspect-ratio: 4 / 3; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
+  background-color: #ffffff; background-image: linear-gradient(#e7edf0 1px, transparent 1px), linear-gradient(90deg, #e7edf0 1px, transparent 1px); background-size: 24px 24px; }
+.pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+.pad .pad-hint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #8a979c; font-size: 15px; text-align: center; pointer-events: none; max-width: 80%; }
+.uploads { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 14px 12px; }
+.thumb { position: relative; width: 110px; height: 82px; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: #fff; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.thumb button { position: absolute; top: 3px; right: 3px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; font-size: 13px; }
+.work-note { font-size: 12px; color: var(--muted); padding: 0 14px 12px; }
+.sr-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* Skript */
+#skript-dlg { max-width: min(1040px, calc(100vw - 32px)); width: 100%; height: min(860px, calc(100vh - 32px)); }
+#skript-dlg[open] { display: flex; flex-direction: column; }
+.skript { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 0; flex: 1; }
+.skript nav { border-right: 1px solid var(--line); overflow-y: auto; padding: 10px 0; font-size: 14px; }
+.skript nav b { display: block; padding: 8px 14px 4px; font: 700 13px/1.2 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.skript nav a { display: block; padding: 4px 14px 4px 22px; color: var(--ink); text-decoration: none; }
+.skript nav a:hover, .skript nav a.cur { background: var(--accent-soft); }
+.skript article { overflow-y: auto; padding: 8px 28px 40px; font-size: 15.5px; line-height: 1.6; max-width: 760px; }
+.skript h2 { font-size: 26px; margin: 22px 0 6px; }
+.skript h3 { font-size: 19px; margin: 22px 0 6px; scroll-margin-top: 10px; }
+.skript h3.flash { animation: flash 1.6s ease; }
+@keyframes flash { 0% { background: var(--hi); } 100% { background: transparent; } }
+.skript .chap-eyebrow { font: 600 12px/1.2 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-top: 26px; }
+.skript .katex-display { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+#subtitle a, .skript-link { cursor: pointer; }
+@media (max-width: 860px) {
+  .cp { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+  .cp-msg { grid-column: 1 / -1; }
+  .skript { grid-template-columns: minmax(0, 1fr); }
+  .skript nav { display: none; }
+  .skript article { padding: 4px 16px 30px; }
+}
+@media (max-width: 480px) {
+  .cp { grid-template-columns: minmax(0, 1fr); }
+}
+
+</style>
+<a class="skip" href="#task-panel">Zur Aufgabe springen</a>
+<header class="titleblock">
+  <div class="tb-mark" aria-hidden="true">PT<span id="tb-version"></span></div>
+  <div class="tb-name">
+    <h1>PhysicsTrainer</h1>
+    <p id="subtitle"></p>
+  </div>
+  <div class="tb-tools">
+    <div class="tb-cell">
+      <span class="tb-label">Gelöst</span>
+      <span class="tb-value" id="solved-count">0 / 0</span>
+    </div>
+    <div class="tb-cell">
+      <span class="tb-label">Skript</span>
+      <button type="button" class="btn ghost" id="skript-btn" data-sec="">Öffnen</button>
+    </div>
+    <div class="tb-cell">
+      <button type="button" class="btn ghost" id="info-btn">Info</button>
+    </div>
+  </div>
+</header>
+
+<nav class="mbar" id="mbar" aria-label="Navigation">
+  <button type="button" class="btn" id="nav-toggle" aria-expanded="false" aria-controls="side"><span aria-hidden="true">☰</span> <span>Aufgaben &amp; Kapitel</span></button>
+  <span class="mbar-info" id="mbar-info"></span>
+  <button type="button" class="btn dark" id="mbar-next">Nächste →</button>
+</nav>
+<div class="backdrop" id="nav-backdrop"></div>
+<div class="sr" id="announce" aria-live="polite"></div>
+
+<div class="app">
+  <aside class="side" id="side" aria-label="Aufgaben, Kapitel und Einstellungen">
+    <div class="drawer-h"><strong>Aufgaben &amp; Kapitel</strong><button type="button" class="btn ghost" id="nav-close">Schließen</button></div>
+    <section class="panel" id="diff-panel">
+      <div class="panel-h"><h2 id="diff-h">Schwierigkeit</h2></div>
+      <div class="panel-b">
+        <div class="field">
+          <div class="seg" role="group" id="mode-seg" aria-labelledby="diff-h" style="width:100%;display:grid;grid-template-columns:2fr 1fr 1fr 1fr">
+            <button type="button" data-mode="auto">Automatisch</button>
+            <button type="button" data-mode="1">1</button>
+            <button type="button" data-mode="2">2</button>
+            <button type="button" data-mode="3">3</button>
+          </div>
+          <p class="levelnote" id="level-note"></p>
+        </div>
+        <div class="field">
+          <button type="button" class="btn dark" id="next-btn" style="justify-content:center">Nächste Aufgabe →</button>
+        </div>
+      </div>
+    </section>
+    <section class="panel" id="chap-panel">
+      <div class="panel-h"><h2>Kapitel</h2><button type="button" class="btn ghost" id="toggle-all" style="padding:2px 6px;font-size:12px"></button></div>
+      <ul class="chapters" id="chapters"></ul>
+      <p class="legend" id="legend"></p>
+    </section>
+  </aside>
+
+  <main class="main">
+    <section class="panel welcome" id="welcome" hidden></section>
+    <section class="panel" id="task-panel" tabindex="-1">
+      <div class="task-head">
+        <h2 id="task-title"></h2>
+        <span class="tag" id="task-tag"></span>
+      </div>
+      <div class="task-body" id="task-body"></div>
+      <div class="refs" id="task-refs"></div>
+      <div class="task-actions">
+        <button type="button" class="btn ghost" id="new-numbers">Neue Zahlen</button>
+        <span class="note-small" id="numbers-note">Jede Aufgabe hat Ihre eigenen Zahlen.</span>
+      </div>
+    </section>
+
+    <section class="panel" id="work-panel" aria-labelledby="work-h">
+      <div class="panel-h"><h2 id="work-h">Rechenweg</h2><span class="eyebrow" id="work-count"></span></div>
+      <div class="work-tools" role="toolbar" aria-label="Werkzeuge für das Schreibfeld">
+        <button type="button" class="tool" data-pen="#17242c" aria-pressed="true" title="Stift schwarz"><span class="swatch" style="background:#17242c"></span><span class="sr">Stift schwarz</span></button>
+        <button type="button" class="tool" data-pen="#2344c4" aria-pressed="false" title="Stift blau"><span class="swatch" style="background:#2344c4"></span><span class="sr">Stift blau</span></button>
+        <button type="button" class="tool" data-pen="#c0262d" aria-pressed="false" title="Stift rot"><span class="swatch" style="background:#c0262d"></span><span class="sr">Stift rot</span></button>
+        <button type="button" class="tool" id="eraser" aria-pressed="false" title="Radierer">⌫ <span>Radierer</span></button>
+        <button type="button" class="tool" id="undo" title="Rückgängig">↶ <span class="sr">Rückgängig</span></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="tool" id="page-prev" title="Vorige Seite">◀<span class="sr">Vorige Seite</span></button>
+        <span class="pageinfo" id="page-info" aria-live="polite"></span>
+        <button type="button" class="tool" id="page-next" title="Nächste Seite">▶<span class="sr">Nächste Seite</span></button>
+        <button type="button" class="tool" id="page-add" title="Neue Seite">+ <span>Seite</span></button>
+        <button type="button" class="tool" id="page-clear" title="Seite leeren">Leeren</button>
+        <span class="grow"></span>
+        <label class="tool" for="photo-in">📷 <span>Foto</span></label>
+        <input type="file" id="photo-in" class="sr-file" accept="image/*" capture="environment">
+        <label class="tool" for="upload-in">⬆ <span>Bild hochladen</span></label>
+        <input type="file" id="upload-in" class="sr-file" accept="image/*" multiple>
+      </div>
+      <div class="pad-wrap">
+        <div class="pad" id="pad"><canvas id="pad-canvas" aria-label="Schreibfeld für den Rechenweg"></canvas><div class="pad-hint" id="pad-hint">Hier mit Stift oder Finger rechnen –<br>oder oben ein Foto bzw. Bild Ihrer Rechnung hinzufügen.</div></div>
+      </div>
+      <div class="uploads" id="uploads"></div>
+      <p class="work-note">Das Schreibfeld wird in diesem Browser gespeichert, Fotos und hochgeladene Bilder nicht. Den Rechenweg sieht nur der KI-Tutor, wenn Sie ihn prüfen lassen.</p>
+    </section>
+
+    <section class="panel" id="check-panel" aria-labelledby="check-h">
+      <div class="panel-h"><h2 id="check-h">Ergebnisse</h2></div>
+      <div class="checks" id="checks"></div>
+      <p class="unit-help">Mit Einheit eingeben, z.B. <code>12,5 m/s</code>, <code>3,2·10^-6 s</code>, <code>40 %</code> oder <code>0,98 c</code>. Andere passende Einheiten (km/h, kN, bar …) rechnet der Trainer selbst um.</p>
+      <div class="checks-bar">
+        <button type="button" class="btn primary" id="check-btn">Prüfen</button>
+        <span class="check-status" id="check-status"></span>
+        <span class="grow"></span>
+      </div>
+    </section>
+
+    <section class="panel" id="result-panel" hidden></section>
+  </main>
+
+  <aside class="panel tutor" id="tutor" aria-labelledby="tutor-h">
+    <div class="panel-h"><h2 id="tutor-h">KI-Tutor</h2><button type="button" class="btn ghost" id="stop-btn" hidden style="padding:2px 8px;font-size:12px">Stopp</button></div>
+    <div class="tutor-actions" id="tutor-actions">
+      <button type="button" class="btn" id="ai-review">Rechenweg prüfen</button>
+      <button type="button" class="btn" id="ai-hint"><span>Tipp</span><span class="hintmeter" id="hintmeter"><i></i><i></i><i></i></span></button>
+    </div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <form class="chat-form" id="chat-form">
+      <textarea id="chat-input" rows="1" aria-labelledby="tutor-h" placeholder="Frage zur Aufgabe oder zum Skript …"></textarea>
+      <button type="submit" class="btn dark">Fragen</button>
+    </form>
+  </aside>
+</div>
+
+<dialog id="info-dlg" aria-labelledby="info-h">
+  <div class="panel-h"><h2 id="info-h">Info</h2><button type="button" class="btn ghost" id="info-close"><span aria-hidden="true">✕</span><span class="sr">Schließen</span></button></div>
+  <div class="panel-b" id="info-body"></div>
+</dialog>
+<dialog id="skript-dlg" aria-labelledby="skript-h">
+  <div class="panel-h"><h2 id="skript-h"></h2><button type="button" class="btn ghost" id="skript-close"><span aria-hidden="true">✕</span><span class="sr">Schließen</span></button></div>
+  <div class="skript"><nav id="skript-nav" aria-label="Inhalt des Skripts"></nav><article id="skript-body"></article></div>
+</dialog>
+
+<script>
+/* ====================================================================== Demo-Skript
+   Platzhalter-Skript für den Vorführprototypen: kurze Abschnitte mit den Formeln, die die Aufgaben brauchen.
+   Jeder Abschnitt: id, Titel, Text (Markdown mit $…$ und $$…$$). */
+const SKRIPT_TITLE = "Physik für Ingenieurinnen und Ingenieure";
+const SKRIPT = [
+  { ch: "1", title: "Kinematik", sections: [
+    { id: "1.1", title: "Ort, Geschwindigkeit und Beschleunigung", text: String.raw`Die Kinematik beschreibt Bewegungen, ohne nach ihren Ursachen zu fragen. Für eine Bewegung entlang einer Geraden genügt der Ort $x(t)$. Die **Geschwindigkeit** ist die Änderung des Ortes pro Zeit, die **Beschleunigung** die Änderung der Geschwindigkeit pro Zeit:
+
+$$v = \frac{\mathrm{d}x}{\mathrm{d}t}, \qquad a = \frac{\mathrm{d}v}{\mathrm{d}t}$$
+
+Die **Durchschnittsgeschwindigkeit** über eine Strecke ist immer Gesamtweg durch Gesamtzeit, $\bar v = s_\mathrm{ges} / t_\mathrm{ges}$ – nicht der Mittelwert der Einzelgeschwindigkeiten.
+
+**Einheiten:** $1\,\mathrm{m/s} = 3{,}6\,\mathrm{km/h}$. Rechnen Sie Zwischenergebnisse in SI-Einheiten und rechnen Sie erst am Ende um.` },
+    { id: "1.2", title: "Gleichmäßig beschleunigte Bewegung", text: String.raw`Bei konstanter Beschleunigung $a$ gelten mit Anfangsgeschwindigkeit $v_0$ und Anfangsort $x_0$:
+
+$$v(t) = v_0 + a\,t, \qquad x(t) = x_0 + v_0\,t + \tfrac{1}{2}\,a\,t^2$$
+
+Eliminiert man die Zeit, erhält man die zeitfreie Gleichung $v^2 = v_0^2 + 2\,a\,s$. Sie ist besonders nützlich für Bremswege: Aus $v = 0$ folgt $s_B = \dfrac{v_0^2}{2\,a}$ (mit dem Betrag der Bremsverzögerung $a$).
+
+Der **Anhalteweg** setzt sich aus Reaktionsweg $s_R = v_0\,t_R$ (konstante Geschwindigkeit während der Reaktionszeit) und Bremsweg zusammen.
+
+Treffen sich zwei Körper, setzt man ihre Orte gleich, $x_1(t) = x_2(t)$, und löst nach $t$ auf – oft führt das auf eine quadratische Gleichung.` },
+    { id: "1.3", title: "Freier Fall und senkrechter Wurf", text: String.raw`In der Nähe der Erdoberfläche erfahren alle Körper (ohne Luftwiderstand) dieselbe Fallbeschleunigung $g = 9{,}81\,\mathrm{m/s^2}$. Zählt man die Höhe $h$ nach oben positiv, gilt für einen senkrechten Wurf mit Abwurfhöhe $h_0$:
+
+$$h(t) = h_0 + v_0\,t - \tfrac{1}{2}\,g\,t^2, \qquad v(t) = v_0 - g\,t$$
+
+Am höchsten Punkt ist $v = 0$; daraus folgen Steigzeit $t_S = v_0/g$ und Steighöhe $\Delta h = \dfrac{v_0^2}{2g}$. Die Flugzeit bis zum Boden erhält man aus $h(t) = 0$ – von den beiden Lösungen der quadratischen Gleichung ist nur die positive physikalisch sinnvoll.` },
+    { id: "1.4", title: "Schiefer Wurf", text: String.raw`Beim schiefen Wurf mit Abwurfgeschwindigkeit $v_0$ unter dem Winkel $\alpha$ zerlegt man die Bewegung in zwei unabhängige Anteile: horizontal gleichförmig, vertikal gleichmäßig beschleunigt.
+
+$$x(t) = v_0 \cos\alpha \cdot t, \qquad y(t) = v_0 \sin\alpha \cdot t - \tfrac{1}{2}\,g\,t^2$$
+
+Für Abwurf und Landung auf gleicher Höhe ergeben sich
+
+$$T = \frac{2\,v_0 \sin\alpha}{g}, \qquad W = \frac{v_0^2 \sin(2\alpha)}{g}, \qquad H = \frac{v_0^2 \sin^2\alpha}{2g}$$
+
+Die größte Wurfweite erreicht man (ohne Luftwiderstand) bei $\alpha = 45^\circ$. Achten Sie darauf, ob Ihr Taschenrechner im Grad- oder Bogenmaß rechnet.` },
+    { id: "1.5", title: "Kreisbewegung", text: String.raw`Bewegt sich ein Körper mit konstantem Betrag der Geschwindigkeit $v$ auf einem Kreis mit Radius $r$, ändert sich ständig die Richtung der Geschwindigkeit. Dazu ist eine zum Mittelpunkt gerichtete **Zentripetalbeschleunigung** nötig:
+
+$$a_Z = \frac{v^2}{r} = \omega^2 r, \qquad \omega = \frac{2\pi}{T}$$
+
+Die zugehörige Kraft behandelt Abschnitt [[2.6]].` },
+  ] },
+  { ch: "2", title: "Dynamik", sections: [
+    { id: "2.1", title: "Die Newtonschen Axiome", text: String.raw`1. **Trägheitsprinzip:** Ein Körper bleibt in Ruhe oder in gleichförmiger Bewegung, solange keine resultierende Kraft auf ihn wirkt.
+2. **Aktionsprinzip:** $\vec F_\mathrm{res} = m\,\vec a$. Die Einheit der Kraft ist $1\,\mathrm{N} = 1\,\mathrm{kg\,m/s^2}$.
+3. **Wechselwirkungsprinzip:** Übt ein Körper A eine Kraft auf B aus, so übt B eine gleich große, entgegengesetzte Kraft auf A aus.
+
+**Vorgehen:** Zeichnen Sie für jeden Körper ein Freikörperbild mit allen angreifenden Kräften, legen Sie eine positive Richtung fest und stellen Sie $F_\mathrm{res} = m\,a$ für jede Richtung auf.
+
+In einem beschleunigten Aufzug zeigt eine Personenwaage die **Normalkraft** an, nicht die Gewichtskraft: Bei Beschleunigung $a$ nach oben gilt $F_N = m\,(g + a)$.` },
+    { id: "2.2", title: "Gewichtskraft, Normalkraft und Reibung", text: String.raw`Die **Gewichtskraft** ist $F_G = m\,g$. Die **Normalkraft** $F_N$ steht senkrecht auf der Kontaktfläche; auf waagerechtem Boden ohne weitere vertikale Kräfte ist $F_N = F_G$.
+
+Die **Gleitreibungskraft** wirkt der Bewegung entgegen und ist proportional zur Normalkraft:
+
+$$F_R = \mu \, F_N$$
+
+mit der Gleitreibungszahl $\mu$ (z.B. Holz auf Holz etwa 0,3). Die Haftreibung kann bis zu $F_{H,\max} = \mu_H F_N$ betragen; $\mu_H$ ist meist größer als $\mu$.` },
+    { id: "2.3", title: "Die schiefe Ebene", text: String.raw`Auf einer schiefen Ebene mit Neigungswinkel $\alpha$ zerlegt man die Gewichtskraft in eine Komponente parallel zur Ebene (**Hangabtriebskraft**) und eine senkrecht dazu:
+
+$$F_H = m\,g \sin\alpha, \qquad F_N = m\,g \cos\alpha$$
+
+Rutscht ein Körper die Ebene hinab, wirkt die Reibung $F_R = \mu\,m\,g\cos\alpha$ nach oben. Die Beschleunigung ist dann
+
+$$a = g\,(\sin\alpha - \mu \cos\alpha)$$
+
+Der Körper rutscht nur, wenn $\tan\alpha > \mu_H$ ist.` },
+    { id: "2.4", title: "Arbeit, Energie und Leistung", text: String.raw`Arbeit ist Kraft mal Weg in Kraftrichtung, $W = F\,s\cos\varphi$. Wichtige Energieformen:
+
+$$E_\mathrm{kin} = \tfrac{1}{2}\,m\,v^2, \qquad E_\mathrm{pot} = m\,g\,h$$
+
+**Energieerhaltung:** Ohne Reibung bleibt die mechanische Energie erhalten, $E_\mathrm{kin} + E_\mathrm{pot} = \text{konst.}$ Daraus folgt für einen Körper, der von der Höhe $h_1$ mit $v_1$ auf die Höhe $h_2$ gelangt:
+
+$$v_2 = \sqrt{v_1^2 + 2\,g\,(h_1 - h_2)}$$
+
+Die Masse kürzt sich heraus. **Leistung** ist Arbeit pro Zeit, $P = W/t$, Einheit $1\,\mathrm{W} = 1\,\mathrm{J/s}$.` },
+    { id: "2.5", title: "Impuls und Stoß", text: String.raw`Der Impuls ist $\vec p = m\,\vec v$. In einem abgeschlossenen System bleibt der Gesamtimpuls erhalten – bei jedem Stoß.
+
+Beim **vollständig inelastischen Stoß** bewegen sich die Körper danach gemeinsam:
+
+$$m_1 v_1 + m_2 v_2 = (m_1 + m_2)\,v'$$
+
+Die kinetische Energie bleibt dabei **nicht** erhalten; ein Teil wird in Wärme und Verformung umgewandelt. Beim **ballistischen Pendel** nutzt man nacheinander Impulserhaltung (Stoß) und Energieerhaltung (Ausschwingen auf die Höhe $h$).` },
+    { id: "2.6", title: "Zentripetalkraft und Kurvenfahrt", text: String.raw`Für eine Kreisbewegung (siehe [[1.5]]) ist die resultierende Kraft zum Mittelpunkt
+
+$$F_Z = \frac{m\,v^2}{r}$$
+
+Bei einem Auto in einer ebenen Kurve muss die Haftreibung diese Kraft aufbringen: $\frac{m v^2}{r} \le \mu_H\,m\,g$, also $v_{\max} = \sqrt{\mu_H\,g\,r}$.
+
+In einer **überhöhten Kurve** mit Neigungswinkel $\beta$ liefert ohne Reibung die Normalkraft die Zentripetalkraft. Für die Auslegungsgeschwindigkeit $v$ gilt
+
+$$\tan\beta = \frac{v^2}{g\,r}$$` },
+  ] },
+  { ch: "3", title: "Thermodynamik", sections: [
+    { id: "3.1", title: "Temperatur und Wärmeausdehnung", text: String.raw`Die absolute Temperatur $T$ wird in Kelvin gemessen: $T/\mathrm{K} = \vartheta/{}^\circ\mathrm{C} + 273{,}15$. **Temperaturdifferenzen** sind in Kelvin und Grad Celsius gleich groß.
+
+Feste Körper dehnen sich bei Erwärmung aus. Für die Längenänderung gilt
+
+$$\Delta L = \alpha\,L_0\,\Delta T$$
+
+mit dem Längenausdehnungskoeffizienten $\alpha$ (Stahl: $12 \cdot 10^{-6}\,\mathrm{K^{-1}}$, Aluminium: $23 \cdot 10^{-6}\,\mathrm{K^{-1}}$). Brücken und Schienen brauchen deshalb Dehnfugen.` },
+    { id: "3.2", title: "Wärmemenge und spezifische Wärmekapazität", text: String.raw`Um einen Körper der Masse $m$ um $\Delta T$ zu erwärmen, braucht man die Wärme
+
+$$Q = c\,m\,\Delta T$$
+
+mit der spezifischen Wärmekapazität $c$ (Wasser: $4190\,\mathrm{J/(kg\,K)}$, Kupfer: $385\,\mathrm{J/(kg\,K)}$).
+
+**Mischtemperatur:** Bringt man Körper unterschiedlicher Temperatur zusammen (ohne Wärmeverluste), gibt der wärmere so viel Wärme ab, wie der kältere aufnimmt:
+
+$$\sum_i c_i\,m_i\,(T_m - T_i) = 0 \quad\Rightarrow\quad T_m = \frac{\sum c_i m_i T_i}{\sum c_i m_i}$$
+
+Liefert ein Heizgerät die elektrische Leistung $P$ mit Wirkungsgrad $\eta$, dauert das Erwärmen $t = \dfrac{Q}{\eta\,P}$.` },
+    { id: "3.3", title: "Das ideale Gas", text: String.raw`Für ein ideales Gas mit der Stoffmenge $n$ gilt die thermische Zustandsgleichung
+
+$$p\,V = n\,R\,T, \qquad R = 8{,}314\,\mathrm{J/(mol\,K)}$$
+
+Dabei sind $p$ der **absolute** Druck und $T$ die **absolute** Temperatur. Bei konstantem Volumen (isochor) folgt $\dfrac{p_1}{T_1} = \dfrac{p_2}{T_2}$, bei konstanter Temperatur (isotherm) $p_1 V_1 = p_2 V_2$.
+
+**Achtung bei Reifen und Druckbehältern:** Manometer zeigen meist den Überdruck gegenüber der Umgebung an, $p_\mathrm{abs} = p_{\ddot{u}} + p_\mathrm{atm}$ mit $p_\mathrm{atm} \approx 1{,}013\,\mathrm{bar}$.` },
+    { id: "3.4", title: "Der erste Hauptsatz", text: String.raw`Die innere Energie $U$ eines Systems ändert sich durch zugeführte Wärme $Q$ und am System verrichtete Arbeit $W$:
+
+$$\Delta U = Q + W$$
+
+Bei einem idealen Gas hängt $U$ nur von der Temperatur ab. Bei einer **isothermen** Zustandsänderung ist deshalb $\Delta U = 0$ und $Q = -W$. Für die am Gas verrichtete Arbeit bei isothermer Kompression von $V_1$ auf $V_2$ gilt
+
+$$W = n\,R\,T\,\ln\frac{V_1}{V_2} = p_1 V_1 \ln\frac{V_1}{V_2}$$
+
+Das Gas gibt bei der Kompression also genau diese Arbeit als Wärme an die Umgebung ab.` },
+    { id: "3.5", title: "Wärmekraftmaschinen und Wirkungsgrad", text: String.raw`Eine Wärmekraftmaschine nimmt die Wärme $Q_\mathrm{zu}$ bei hoher Temperatur auf, gibt Arbeit $W$ ab und führt die Abwärme $Q_\mathrm{ab} = Q_\mathrm{zu} - W$ an ein kälteres Reservoir ab. Der Wirkungsgrad ist
+
+$$\eta = \frac{W}{Q_\mathrm{zu}}$$
+
+Keine Maschine zwischen den Temperaturen $T_h$ und $T_k$ kann den **Carnot-Wirkungsgrad** übertreffen:
+
+$$\eta_C = 1 - \frac{T_k}{T_h} \qquad (T \text{ in Kelvin!})$$
+
+Für Leistungen gelten dieselben Beziehungen mit $P = \eta\,\dot Q_\mathrm{zu}$.` },
+  ] },
+  { ch: "4", title: "Spezielle Relativitätstheorie", sections: [
+    { id: "4.1", title: "Die Postulate und der Lorentzfaktor", text: String.raw`Einstein stellte zwei Postulate auf: Die Naturgesetze gelten in allen Inertialsystemen gleich, und die Lichtgeschwindigkeit im Vakuum hat in jedem Inertialsystem denselben Wert $c = 299\,792\,458\,\mathrm{m/s}$.
+
+Viele Effekte lassen sich mit dem **Lorentzfaktor** ausdrücken:
+
+$$\beta = \frac{v}{c}, \qquad \gamma = \frac{1}{\sqrt{1 - \beta^2}} \ge 1$$
+
+Für Alltagsgeschwindigkeiten ist $\gamma \approx 1$; erst nahe der Lichtgeschwindigkeit wird $\gamma$ groß.` },
+    { id: "4.2", title: "Zeitdilatation", text: String.raw`Eine bewegte Uhr geht langsamer. Vergeht im Ruhesystem der Uhr die **Eigenzeit** $\tau_0$, misst ein Beobachter, gegenüber dem sich die Uhr mit $v$ bewegt, die Zeit
+
+$$\tau = \gamma\,\tau_0$$
+
+**Beispiel Myonen:** Myonen entstehen in etwa 10 km Höhe und haben eine mittlere Lebensdauer von $2{,}2\,\mu\mathrm{s}$. Klassisch kämen sie im Mittel nur rund 660 m weit; dank Zeitdilatation erreichen viele den Erdboden.
+
+Bei Reisen gilt: Für die Reisenden vergeht die Zeit $t' = t/\gamma$, wenn auf der Erde $t$ vergeht.` },
+    { id: "4.3", title: "Längenkontraktion", text: String.raw`Ein bewegter Körper ist in Bewegungsrichtung verkürzt. Hat er in seinem Ruhesystem die **Eigenlänge** $L_0$, misst ein Beobachter
+
+$$L = \frac{L_0}{\gamma}$$
+
+Quer zur Bewegungsrichtung tritt keine Verkürzung auf. Aus Sicht von Raumfahrenden ist auch die Strecke zu einem Ziel verkürzt: Statt $d$ legen sie nur $d/\gamma$ zurück – das ist dieselbe Physik wie die Zeitdilatation, nur aus dem anderen System betrachtet.` },
+    { id: "4.4", title: "Relativistische Energie und Impuls", text: String.raw`Ein Teilchen mit Ruhemasse $m$ hat die Ruheenergie $E_0 = m c^2$ und die Gesamtenergie
+
+$$E = \gamma\,m c^2, \qquad E_\mathrm{kin} = E - m c^2 = (\gamma - 1)\,m c^2$$
+
+Für den Impuls gilt $p = \gamma\,m\,v$ und der Zusammenhang $E^2 = (p c)^2 + (m c^2)^2$. In der Teilchenphysik gibt man Energien in Elektronenvolt an ($1\,\mathrm{eV} = 1{,}602 \cdot 10^{-19}\,\mathrm{J}$), Impulse in $\mathrm{eV}/c$.
+
+Ruheenergien: Elektron $0{,}511\,\mathrm{MeV}$, Proton $938{,}3\,\mathrm{MeV}$. Ein Elektron, das die Spannung $U$ durchläuft, gewinnt die Energie $E_\mathrm{kin} = e\,U$.
+
+**Rechentipp:** Für sehr große $\gamma$ liefert $1 - \beta$ auf dem Taschenrechner oft 0. Nutzen Sie dann $1 - \beta \approx \dfrac{1}{2\gamma^2}$.` },
+    { id: "4.5", title: "Relativistische Geschwindigkeitsaddition", text: String.raw`Bewegt sich ein Raumschiff mit $u$ gegenüber der Erde und startet es eine Sonde mit $v'$ (gemessen im Raumschiff) in Flugrichtung, so hat die Sonde gegenüber der Erde die Geschwindigkeit
+
+$$v = \frac{u + v'}{1 + \dfrac{u\,v'}{c^2}}$$
+
+Das Ergebnis ist immer kleiner als $c$. Für eine Sonde, die nach hinten gestartet wird, ersetzt man $v'$ durch $-v'$. Für kleine Geschwindigkeiten geht die Formel in die klassische Addition $v = u + v'$ über.` },
+  ] },
+];
+
+/* ====================================================================== Aufgaben
+   Jede Aufgabe erzeugt mit einem Zufallsgenerator r eigene Zahlen (params), daraus Text, Kontrollpunkte und Musterlösung.
+   Kontrollpunkte: k (Schlüssel), sym (LaTeX), name, q (Größenart für die Einheitenprüfung), unit (Einheit in der Musterlösung),
+   v(p) = Sollwert in SI-Einheiten, tol = relative Toleranz (Standard 1 %). */
+const G = 9.81, C = 299792458, R_GAS = 8.314, LY = 9.4607e15;
+const rad = d => d * Math.PI / 180;
+const gam = b => 1 / Math.sqrt(1 - b * b);
+
+const TASKS = [
+  // ------------------------------------------------------------------ 1 Kinematik
+  { id: "k1-avg", ch: "1", lvl: 1, title: "Fahrt mit zwei Abschnitten", refs: ["1.1"],
+    params: r => ({ s1: r.step(40, 120, 10), v1: r.step(90, 130, 10), s2: r.step(10, 50, 5), v2: r.step(30, 60, 10) }),
+    text: p => String.raw`Ein Auto fährt zuerst $s_1 = ${tx(p.s1)}\,\mathrm{km}$ auf der Autobahn mit konstant $v_1 = ${tx(p.v1)}\,\mathrm{km/h}$ und danach $s_2 = ${tx(p.s2)}\,\mathrm{km}$ durch eine Baustelle mit $v_2 = ${tx(p.v2)}\,\mathrm{km/h}$.
+
+Berechnen Sie die **Gesamtfahrzeit** $t_\mathrm{ges}$ und die **Durchschnittsgeschwindigkeit** $\bar v$ über die ganze Strecke.`,
+    checks: [
+      { k: "t", sym: "t_\\mathrm{ges}", name: "Gesamtfahrzeit", q: "time", unit: "min", v: p => (p.s1 / p.v1 + p.s2 / p.v2) * 3600 },
+      { k: "v", sym: "\\bar v", name: "Durchschnittsgeschwindigkeit", q: "velocity", unit: "km/h", v: p => (p.s1 + p.s2) / (p.s1 / p.v1 + p.s2 / p.v2) / 3.6 },
+    ],
+    solution: p => { const t1 = p.s1 / p.v1, t2 = p.s2 / p.v2, t = t1 + t2; return String.raw`Zeiten der Abschnitte: $t_1 = \frac{s_1}{v_1} = ${tx(t1, 4)}\,\mathrm{h}$, $t_2 = \frac{s_2}{v_2} = ${tx(t2, 4)}\,\mathrm{h}$
+
+$$t_\mathrm{ges} = t_1 + t_2 = ${tx(t, 4)}\,\mathrm{h} = ${tx(t * 60)}\,\mathrm{min}$$
+
+$$\bar v = \frac{s_1 + s_2}{t_\mathrm{ges}} = \frac{${tx(p.s1 + p.s2)}\,\mathrm{km}}{${tx(t, 4)}\,\mathrm{h}} = ${tx((p.s1 + p.s2) / t)}\,\mathrm{km/h}$$
+
+Typischer Fehler: der Mittelwert $\frac{v_1 + v_2}{2} = ${tx((p.v1 + p.v2) / 2)}\,\mathrm{km/h}$ – er ist falsch, weil das Auto nicht gleich lange in beiden Abschnitten fährt.`; } },
+
+  { id: "k1-train", ch: "1", lvl: 1, title: "Anfahrender Zug", refs: ["1.2"],
+    params: r => ({ a: r.step(0.3, 1.2, 0.1), t: r.step(15, 60, 5) }),
+    text: p => String.raw`Ein Regionalzug fährt aus dem Stand mit der konstanten Beschleunigung $a = ${tx(p.a)}\,\mathrm{m/s^2}$ an.
+
+Welche **Geschwindigkeit** $v$ hat er nach $t = ${tx(p.t)}\,\mathrm{s}$, und welchen **Weg** $s$ hat er bis dahin zurückgelegt?`,
+    checks: [
+      { k: "v", sym: "v", name: "Geschwindigkeit", q: "velocity", unit: "km/h", v: p => p.a * p.t },
+      { k: "s", sym: "s", name: "Weg", q: "length", unit: "m", v: p => 0.5 * p.a * p.t * p.t },
+    ],
+    solution: p => String.raw`Aus dem Stand ($v_0 = 0$) mit konstanter Beschleunigung:
+
+$$v = a\,t = ${tx(p.a)}\,\mathrm{m/s^2} \cdot ${tx(p.t)}\,\mathrm{s} = ${tx(p.a * p.t)}\,\mathrm{m/s} = ${tx(p.a * p.t * 3.6)}\,\mathrm{km/h}$$
+
+$$s = \tfrac{1}{2}\,a\,t^2 = \tfrac{1}{2} \cdot ${tx(p.a)}\,\mathrm{m/s^2} \cdot (${tx(p.t)}\,\mathrm{s})^2 = ${tx(0.5 * p.a * p.t * p.t)}\,\mathrm{m}$$` },
+
+  { id: "k1-brake", ch: "1", lvl: 2, title: "Anhalteweg", refs: ["1.2"],
+    params: r => ({ v: r.step(50, 130, 10), tr: r.pick([0.8, 1.0, 1.2]), a: r.step(5, 8, 0.5) }),
+    text: p => String.raw`Eine Autofahrerin fährt mit $v_0 = ${tx(p.v)}\,\mathrm{km/h}$, als ein Hindernis auftaucht. Ihre Reaktionszeit beträgt $t_R = ${tx(p.tr)}\,\mathrm{s}$, danach bremst sie mit der konstanten Verzögerung $a = ${tx(p.a)}\,\mathrm{m/s^2}$ bis zum Stillstand.
+
+Berechnen Sie den **Reaktionsweg** $s_R$, den **Bremsweg** $s_B$ und den **Anhalteweg** $s_A$.`,
+    checks: [
+      { k: "sR", sym: "s_R", name: "Reaktionsweg", q: "length", unit: "m", v: p => p.v / 3.6 * p.tr },
+      { k: "sB", sym: "s_B", name: "Bremsweg", q: "length", unit: "m", v: p => (p.v / 3.6) ** 2 / (2 * p.a) },
+      { k: "sA", sym: "s_A", name: "Anhalteweg", q: "length", unit: "m", v: p => p.v / 3.6 * p.tr + (p.v / 3.6) ** 2 / (2 * p.a) },
+    ],
+    solution: p => { const v = p.v / 3.6, sR = v * p.tr, sB = v * v / (2 * p.a); return String.raw`Zuerst in SI-Einheiten umrechnen: $v_0 = \frac{${tx(p.v)}}{3{,}6}\,\mathrm{m/s} = ${tx(v, 4)}\,\mathrm{m/s}$
+
+$$s_R = v_0\,t_R = ${tx(sR)}\,\mathrm{m}, \qquad s_B = \frac{v_0^2}{2a} = \frac{(${tx(v, 4)}\,\mathrm{m/s})^2}{2 \cdot ${tx(p.a)}\,\mathrm{m/s^2}} = ${tx(sB)}\,\mathrm{m}$$
+
+$$s_A = s_R + s_B = ${tx(sR + sB)}\,\mathrm{m}$$`; } },
+
+  { id: "k1-vertical", ch: "1", lvl: 2, title: "Ball senkrecht nach oben", refs: ["1.3"],
+    params: r => ({ v0: r.step(8, 22, 1), h0: r.step(1.2, 2.0, 0.1) }),
+    text: p => String.raw`Ein Ball wird aus $h_0 = ${tx(p.h0)}\,\mathrm{m}$ Höhe mit $v_0 = ${tx(p.v0)}\,\mathrm{m/s}$ senkrecht nach oben geworfen (ohne Luftwiderstand, $g = 9{,}81\,\mathrm{m/s^2}$).
+
+Berechnen Sie die **Steigzeit** $t_S$, die **maximale Höhe** $h_{\max}$ über dem Boden und die **Flugzeit** $t_F$ bis zum Aufprall auf dem Boden.`,
+    checks: [
+      { k: "tS", sym: "t_S", name: "Steigzeit", q: "time", unit: "s", v: p => p.v0 / G },
+      { k: "h", sym: "h_{\\max}", name: "maximale Höhe", q: "length", unit: "m", v: p => p.h0 + p.v0 * p.v0 / (2 * G) },
+      { k: "tF", sym: "t_F", name: "Flugzeit", q: "time", unit: "s", v: p => (p.v0 + Math.sqrt(p.v0 * p.v0 + 2 * G * p.h0)) / G },
+    ],
+    solution: p => { const tS = p.v0 / G, h = p.h0 + p.v0 * p.v0 / (2 * G), tF = (p.v0 + Math.sqrt(p.v0 * p.v0 + 2 * G * p.h0)) / G; return String.raw`Am höchsten Punkt ist $v = 0$: $\;t_S = \frac{v_0}{g} = ${tx(tS)}\,\mathrm{s}$
+
+$$h_{\max} = h_0 + \frac{v_0^2}{2g} = ${tx(p.h0)}\,\mathrm{m} + ${tx(p.v0 * p.v0 / (2 * G))}\,\mathrm{m} = ${tx(h)}\,\mathrm{m}$$
+
+Aufprall bei $h(t) = h_0 + v_0 t - \tfrac{1}{2} g t^2 = 0$. Die positive Lösung der quadratischen Gleichung ist
+
+$$t_F = \frac{v_0 + \sqrt{v_0^2 + 2 g h_0}}{g} = ${tx(tF)}\,\mathrm{s}$$`; } },
+
+  { id: "k1-projectile", ch: "1", lvl: 3, title: "Schiefer Wurf beim Kugelstoßen", refs: ["1.4"],
+    params: r => ({ v0: r.step(10, 16, 0.5), a: r.step(30, 60, 5) }),
+    text: p => String.raw`Eine Kugel wird mit $v_0 = ${tx(p.v0)}\,\mathrm{m/s}$ unter dem Winkel $\alpha = ${tx(p.a)}^\circ$ gegen die Horizontale abgeworfen. Vereinfachend landet sie auf derselben Höhe, aus der sie abgeworfen wurde (ohne Luftwiderstand).
+
+Berechnen Sie die **Flugzeit** $T$, die **Wurfweite** $W$ und die **Gipfelhöhe** $H$ über der Abwurfhöhe.`,
+    checks: [
+      { k: "T", sym: "T", name: "Flugzeit", q: "time", unit: "s", v: p => 2 * p.v0 * Math.sin(rad(p.a)) / G },
+      { k: "W", sym: "W", name: "Wurfweite", q: "length", unit: "m", v: p => p.v0 * p.v0 * Math.sin(rad(2 * p.a)) / G },
+      { k: "H", sym: "H", name: "Gipfelhöhe", q: "length", unit: "m", v: p => (p.v0 * Math.sin(rad(p.a))) ** 2 / (2 * G) },
+    ],
+    solution: p => { const vx = p.v0 * Math.cos(rad(p.a)), vy = p.v0 * Math.sin(rad(p.a)), T = 2 * vy / G; return String.raw`Zerlegung der Abwurfgeschwindigkeit: $v_x = v_0 \cos\alpha = ${tx(vx, 4)}\,\mathrm{m/s}$, $\;v_y = v_0 \sin\alpha = ${tx(vy, 4)}\,\mathrm{m/s}$
+
+$$T = \frac{2\,v_y}{g} = ${tx(T)}\,\mathrm{s}, \qquad W = v_x\,T = ${tx(vx * T)}\,\mathrm{m}, \qquad H = \frac{v_y^2}{2g} = ${tx(vy * vy / (2 * G))}\,\mathrm{m}$$
+
+Taschenrechner im Gradmaß! Im Bogenmaß erhält man mit $\alpha = ${tx(p.a)}$ völlig andere Werte.`; } },
+
+  { id: "k1-chase", ch: "1", lvl: 3, title: "Verfolgungsfahrt", refs: ["1.2"],
+    params: r => ({ v: r.step(100, 160, 10), dt: r.step(2, 6, 1), a: r.step(2.5, 4, 0.5) }),
+    text: p => String.raw`Ein Raser fährt mit konstant $v_R = ${tx(p.v)}\,\mathrm{km/h}$ an einem stehenden Polizeiwagen vorbei. Der Polizeiwagen startet $\Delta t = ${tx(p.dt)}\,\mathrm{s}$ später und beschleunigt konstant mit $a = ${tx(p.a)}\,\mathrm{m/s^2}$.
+
+Nach welcher **Zeit** $t$ (gemessen ab dem Start der Polizei) holt die Polizei den Raser ein, welche **Strecke** $s$ hat sie dann zurückgelegt, und wie **schnell** $v_P$ ist sie in diesem Moment?`,
+    checks: [
+      { k: "t", sym: "t", name: "Zeit bis zum Einholen", q: "time", unit: "s", v: p => { const v = p.v / 3.6; return (v + Math.sqrt(v * v + 2 * p.a * v * p.dt)) / p.a; } },
+      { k: "s", sym: "s", name: "Strecke", q: "length", unit: "m", v: p => { const v = p.v / 3.6, t = (v + Math.sqrt(v * v + 2 * p.a * v * p.dt)) / p.a; return 0.5 * p.a * t * t; } },
+      { k: "vP", sym: "v_P", name: "Geschwindigkeit der Polizei", q: "velocity", unit: "km/h", v: p => { const v = p.v / 3.6; return v + Math.sqrt(v * v + 2 * p.a * v * p.dt); } },
+    ],
+    solution: p => { const v = p.v / 3.6, t = (v + Math.sqrt(v * v + 2 * p.a * v * p.dt)) / p.a; return String.raw`Mit $v_R = ${tx(v, 4)}\,\mathrm{m/s}$ und $t$ ab Start der Polizei: Raser $x_R = v_R\,(t + \Delta t)$, Polizei $x_P = \tfrac{1}{2} a t^2$. Gleichsetzen:
+
+$$\tfrac{1}{2} a t^2 - v_R\,t - v_R\,\Delta t = 0 \quad\Rightarrow\quad t = \frac{v_R + \sqrt{v_R^2 + 2\,a\,v_R\,\Delta t}}{a} = ${tx(t)}\,\mathrm{s}$$
+
+$$s = \tfrac{1}{2} a t^2 = ${tx(0.5 * p.a * t * t)}\,\mathrm{m}, \qquad v_P = a\,t = ${tx(p.a * t)}\,\mathrm{m/s} = ${tx(p.a * t * 3.6)}\,\mathrm{km/h}$$`; } },
+
+  // ------------------------------------------------------------------ 2 Dynamik
+  { id: "k2-crate", ch: "2", lvl: 1, title: "Kiste über den Boden schieben", refs: ["2.1", "2.2"],
+    params: r => { const m = r.step(20, 80, 5), mu = r.step(0.2, 0.5, 0.05); return { m, mu, F: Math.round(mu * m * G * r.step(1.3, 1.8, 0.1) / 5) * 5 }; },
+    text: p => String.raw`Eine Kiste der Masse $m = ${tx(p.m)}\,\mathrm{kg}$ wird mit der waagerechten Kraft $F = ${tx(p.F)}\,\mathrm{N}$ über einen ebenen Boden geschoben. Die Gleitreibungszahl beträgt $\mu = ${tx(p.mu)}$.
+
+Berechnen Sie die **Reibungskraft** $F_R$ und die **Beschleunigung** $a$ der Kiste.`,
+    checks: [
+      { k: "FR", sym: "F_R", name: "Reibungskraft", q: "force", unit: "N", v: p => p.mu * p.m * G },
+      { k: "a", sym: "a", name: "Beschleunigung", q: "accel", unit: "m/s^2", v: p => (p.F - p.mu * p.m * G) / p.m },
+    ],
+    solution: p => String.raw`Auf ebenem Boden ist $F_N = m\,g = ${tx(p.m * G)}\,\mathrm{N}$, also
+
+$$F_R = \mu\,F_N = ${tx(p.mu)} \cdot ${tx(p.m * G)}\,\mathrm{N} = ${tx(p.mu * p.m * G)}\,\mathrm{N}$$
+
+Die resultierende Kraft beschleunigt die Kiste:
+
+$$a = \frac{F - F_R}{m} = \frac{${tx(p.F)}\,\mathrm{N} - ${tx(p.mu * p.m * G)}\,\mathrm{N}}{${tx(p.m)}\,\mathrm{kg}} = ${tx((p.F - p.mu * p.m * G) / p.m)}\,\mathrm{m/s^2}$$` },
+
+  { id: "k2-elevator", ch: "2", lvl: 1, title: "Personenwaage im Aufzug", refs: ["2.1"],
+    params: r => ({ m: r.step(55, 95, 5), a: r.step(0.5, 2.0, 0.25) }),
+    text: p => String.raw`Eine Person ($m = ${tx(p.m)}\,\mathrm{kg}$) steht in einem Aufzug auf einer Personenwaage. Der Aufzug fährt an und beschleunigt mit $a = ${tx(p.a)}\,\mathrm{m/s^2}$ **nach oben**.
+
+Wie groß ist die **Normalkraft** $F_N$ der Waage auf die Person, und welche **Masse** $m_\mathrm{Anz}$ zeigt die Waage an (sie ist auf $g = 9{,}81\,\mathrm{m/s^2}$ geeicht)?`,
+    checks: [
+      { k: "FN", sym: "F_N", name: "Normalkraft", q: "force", unit: "N", v: p => p.m * (G + p.a) },
+      { k: "mA", sym: "m_\\mathrm{Anz}", name: "angezeigte Masse", q: "mass", unit: "kg", v: p => p.m * (G + p.a) / G },
+    ],
+    solution: p => String.raw`Freikörperbild der Person: $F_N$ nach oben, $F_G = m g$ nach unten. Mit der positiven Richtung nach oben:
+
+$$F_N - m\,g = m\,a \quad\Rightarrow\quad F_N = m\,(g + a) = ${tx(p.m)}\,\mathrm{kg} \cdot ${tx(G + p.a, 4)}\,\mathrm{m/s^2} = ${tx(p.m * (G + p.a))}\,\mathrm{N}$$
+
+Die Waage rechnet die Kraft mit $g$ in eine Masse um: $m_\mathrm{Anz} = \frac{F_N}{g} = ${tx(p.m * (G + p.a) / G)}\,\mathrm{kg}$.` },
+
+  { id: "k2-incline", ch: "2", lvl: 2, title: "Kiste auf der Rampe", refs: ["2.3"],
+    params: r => ({ m: r.step(10, 50, 5), a: r.step(25, 45, 5), mu: r.step(0.15, 0.35, 0.05) }),
+    text: p => String.raw`Eine Kiste ($m = ${tx(p.m)}\,\mathrm{kg}$) rutscht eine Rampe mit dem Neigungswinkel $\alpha = ${tx(p.a)}^\circ$ hinab. Die Gleitreibungszahl beträgt $\mu = ${tx(p.mu)}$.
+
+Berechnen Sie die **Hangabtriebskraft** $F_H$, die **Normalkraft** $F_N$ und die **Beschleunigung** $a$ der Kiste.`,
+    checks: [
+      { k: "FH", sym: "F_H", name: "Hangabtriebskraft", q: "force", unit: "N", v: p => p.m * G * Math.sin(rad(p.a)) },
+      { k: "FN", sym: "F_N", name: "Normalkraft", q: "force", unit: "N", v: p => p.m * G * Math.cos(rad(p.a)) },
+      { k: "a", sym: "a", name: "Beschleunigung", q: "accel", unit: "m/s^2", v: p => G * (Math.sin(rad(p.a)) - p.mu * Math.cos(rad(p.a))) },
+    ],
+    solution: p => { const FH = p.m * G * Math.sin(rad(p.a)), FN = p.m * G * Math.cos(rad(p.a)); return String.raw`Zerlegung der Gewichtskraft $F_G = m g = ${tx(p.m * G)}\,\mathrm{N}$:
+
+$$F_H = m g \sin\alpha = ${tx(FH)}\,\mathrm{N}, \qquad F_N = m g \cos\alpha = ${tx(FN)}\,\mathrm{N}$$
+
+Reibung $F_R = \mu F_N = ${tx(p.mu * FN)}\,\mathrm{N}$ wirkt hangaufwärts:
+
+$$a = \frac{F_H - F_R}{m} = g\,(\sin\alpha - \mu\cos\alpha) = ${tx((FH - p.mu * FN) / p.m)}\,\mathrm{m/s^2}$$`; } },
+
+  { id: "k2-coaster", ch: "2", lvl: 2, title: "Achterbahn", refs: ["2.4"],
+    params: r => ({ h1: r.step(30, 60, 5), v1: r.step(2, 6, 1), h2: r.step(12, 25, 1) }),
+    text: p => String.raw`Ein Achterbahnwagen erreicht den ersten Gipfel in $h_1 = ${tx(p.h1)}\,\mathrm{m}$ Höhe mit $v_1 = ${tx(p.v1)}\,\mathrm{m/s}$. Danach fährt er hinunter bis auf Bodenhöhe und anschließend in einen Looping, dessen höchster Punkt bei $h_2 = ${tx(p.h2)}\,\mathrm{m}$ liegt. Reibung und Luftwiderstand werden vernachlässigt.
+
+Wie schnell ist der Wagen am **tiefsten Punkt** ($v_u$) und am **höchsten Punkt des Loopings** ($v_2$)?`,
+    checks: [
+      { k: "vu", sym: "v_u", name: "Geschwindigkeit unten", q: "velocity", unit: "m/s", v: p => Math.sqrt(p.v1 ** 2 + 2 * G * p.h1) },
+      { k: "v2", sym: "v_2", name: "Geschwindigkeit oben im Looping", q: "velocity", unit: "m/s", v: p => Math.sqrt(p.v1 ** 2 + 2 * G * (p.h1 - p.h2)) },
+    ],
+    solution: p => String.raw`Energieerhaltung zwischen Gipfel und tiefstem Punkt (die Masse kürzt sich):
+
+$$\tfrac{1}{2} m v_1^2 + m g h_1 = \tfrac{1}{2} m v_u^2 \quad\Rightarrow\quad v_u = \sqrt{v_1^2 + 2 g h_1} = ${tx(Math.sqrt(p.v1 ** 2 + 2 * G * p.h1))}\,\mathrm{m/s}$$
+
+Genauso zwischen Gipfel und Looping-Scheitel:
+
+$$v_2 = \sqrt{v_1^2 + 2 g (h_1 - h_2)} = ${tx(Math.sqrt(p.v1 ** 2 + 2 * G * (p.h1 - p.h2)))}\,\mathrm{m/s}$$` },
+
+  { id: "k2-pendulum", ch: "2", lvl: 3, title: "Ballistisches Pendel", refs: ["2.5", "2.4"],
+    params: r => ({ m: r.step(5, 15, 1), v: r.step(250, 450, 25), M: r.step(1.0, 3.0, 0.5) }),
+    text: p => String.raw`Ein Geschoss ($m = ${tx(p.m)}\,\mathrm{g}$, $v = ${tx(p.v)}\,\mathrm{m/s}$) trifft waagerecht einen ruhenden, an Seilen hängenden Holzklotz ($M = ${tx(p.M)}\,\mathrm{kg}$) und bleibt darin stecken.
+
+Berechnen Sie die **Geschwindigkeit** $v'$ von Klotz und Geschoss direkt nach dem Stoß, die **Höhe** $h$, um die das Pendel danach ausschwingt, und den **Anteil der kinetischen Energie**, der beim Stoß in Wärme und Verformung umgewandelt wird.`,
+    checks: [
+      { k: "v", sym: "v'", name: "Geschwindigkeit nach dem Stoß", q: "velocity", unit: "m/s", v: p => (p.m / 1000) * p.v / (p.m / 1000 + p.M) },
+      { k: "h", sym: "h", name: "Steighöhe", q: "length", unit: "cm", v: p => ((p.m / 1000) * p.v / (p.m / 1000 + p.M)) ** 2 / (2 * G) },
+      { k: "loss", sym: "\\Delta E / E", name: "Energieverlust", q: "ratio", unit: "%", v: p => p.M / (p.m / 1000 + p.M) },
+    ],
+    solution: p => { const m = p.m / 1000, vp = m * p.v / (m + p.M), h = vp * vp / (2 * G); return String.raw`**Stoß** (Impulserhaltung, vollständig inelastisch), mit $m = ${tx(m)}\,\mathrm{kg}$:
+
+$$m v = (m + M)\,v' \quad\Rightarrow\quad v' = \frac{m\,v}{m + M} = ${tx(vp)}\,\mathrm{m/s}$$
+
+**Ausschwingen** (Energieerhaltung): $h = \frac{v'^2}{2g} = ${tx(h)}\,\mathrm{m} = ${tx(h * 100)}\,\mathrm{cm}$
+
+**Energiebilanz:** $E = \tfrac{1}{2} m v^2 = ${tx(0.5 * m * p.v * p.v)}\,\mathrm{J}$ vorher, $E' = \tfrac{1}{2}(m+M)v'^2 = ${tx(0.5 * (m + p.M) * vp * vp)}\,\mathrm{J}$ nachher. Umgewandelt wird
+
+$$\frac{E - E'}{E} = \frac{M}{m + M} = ${tx(100 * p.M / (m + p.M), 4)}\,\%$$
+
+Energieerhaltung gilt beim Stoß **nicht** – nur der Impuls bleibt erhalten.`; } },
+
+  { id: "k2-curve", ch: "2", lvl: 3, title: "Kurvenfahrt", refs: ["2.6", "1.5"],
+    params: r => ({ r: r.step(40, 150, 10), mu: r.step(0.5, 0.9, 0.1), m: r.step(1000, 1800, 100), vd: r.step(60, 100, 10) }),
+    text: p => String.raw`Ein Auto ($m = ${tx(p.m)}\,\mathrm{kg}$) fährt durch eine ebene Kurve mit dem Radius $r = ${tx(p.r)}\,\mathrm{m}$. Die Haftreibungszahl zwischen Reifen und Straße beträgt $\mu_H = ${tx(p.mu)}$.
+
+1. Mit welcher **Höchstgeschwindigkeit** $v_{\max}$ kann das Auto die Kurve gerade noch durchfahren?
+2. Wie groß ist dabei die **Zentripetalkraft** $F_Z$?
+3. Die Kurve soll so **überhöht** werden, dass ein Auto sie mit $v = ${tx(p.vd)}\,\mathrm{km/h}$ ganz ohne Reibung durchfahren kann. Welchen **Neigungswinkel** $\beta$ braucht die Fahrbahn?`,
+    checks: [
+      { k: "vmax", sym: "v_{\\max}", name: "Höchstgeschwindigkeit", q: "velocity", unit: "km/h", v: p => Math.sqrt(p.mu * G * p.r) },
+      { k: "FZ", sym: "F_Z", name: "Zentripetalkraft", q: "force", unit: "kN", v: p => p.mu * p.m * G },
+      { k: "beta", sym: "\\beta", name: "Neigungswinkel", q: "angle", unit: "°", v: p => Math.atan((p.vd / 3.6) ** 2 / (G * p.r)) },
+    ],
+    solution: p => { const vm = Math.sqrt(p.mu * G * p.r), v = p.vd / 3.6, b = Math.atan(v * v / (G * p.r)) * 180 / Math.PI; return String.raw`1. Die Haftreibung liefert höchstens $\mu_H m g$:
+
+$$\frac{m v_{\max}^2}{r} = \mu_H\,m\,g \quad\Rightarrow\quad v_{\max} = \sqrt{\mu_H\,g\,r} = ${tx(vm)}\,\mathrm{m/s} = ${tx(vm * 3.6)}\,\mathrm{km/h}$$
+
+2. $F_Z = \frac{m v_{\max}^2}{r} = \mu_H\,m\,g = ${tx(p.mu * p.m * G)}\,\mathrm{N}$
+
+3. Mit $v = ${tx(v, 4)}\,\mathrm{m/s}$:
+
+$$\tan\beta = \frac{v^2}{g\,r} = ${tx(v * v / (G * p.r), 4)} \quad\Rightarrow\quad \beta = ${tx(b)}^\circ$$`; } },
+
+  // ------------------------------------------------------------------ 3 Thermodynamik
+  { id: "k3-kettle", ch: "3", lvl: 1, title: "Wasserkocher", refs: ["3.2"],
+    params: r => ({ V: r.step(0.5, 1.7, 0.1), T1: r.step(10, 20, 1), P: r.step(1800, 2400, 200), eta: r.step(0.8, 0.95, 0.05) }),
+    text: p => String.raw`In einem Wasserkocher ($P = ${tx(p.P)}\,\mathrm{W}$, Wirkungsgrad $\eta = ${tx(p.eta)}$) werden $${tx(p.V)}\,\mathrm{l}$ Wasser von $${tx(p.T1)}\,{}^\circ\mathrm{C}$ auf $100\,{}^\circ\mathrm{C}$ erwärmt ($c_W = 4190\,\mathrm{J/(kg\,K)}$, $1\,\mathrm{l}$ Wasser hat die Masse $1\,\mathrm{kg}$).
+
+Berechnen Sie die nötige **Wärme** $Q$ und die **Zeit** $t$, die der Wasserkocher braucht.`,
+    checks: [
+      { k: "Q", sym: "Q", name: "Wärme", q: "energy", unit: "kJ", v: p => 4190 * p.V * (100 - p.T1) },
+      { k: "t", sym: "t", name: "Zeit", q: "time", unit: "s", v: p => 4190 * p.V * (100 - p.T1) / (p.eta * p.P) },
+    ],
+    solution: p => { const Q = 4190 * p.V * (100 - p.T1); return String.raw`Mit $m = ${tx(p.V)}\,\mathrm{kg}$ und $\Delta T = ${tx(100 - p.T1)}\,\mathrm{K}$:
+
+$$Q = c_W\,m\,\Delta T = 4190\,\tfrac{\mathrm{J}}{\mathrm{kg\,K}} \cdot ${tx(p.V)}\,\mathrm{kg} \cdot ${tx(100 - p.T1)}\,\mathrm{K} = ${tx(Q / 1000)}\,\mathrm{kJ}$$
+
+Nur der Anteil $\eta$ der elektrischen Leistung erwärmt das Wasser:
+
+$$t = \frac{Q}{\eta\,P} = \frac{${tx(Q)}\,\mathrm{J}}{${tx(p.eta)} \cdot ${tx(p.P)}\,\mathrm{W}} = ${tx(Q / (p.eta * p.P))}\,\mathrm{s} \approx ${tx(Q / (p.eta * p.P) / 60, 2)}\,\mathrm{min}$$`; } },
+
+  { id: "k3-bridge", ch: "3", lvl: 1, title: "Dehnfuge einer Stahlbrücke", refs: ["3.1"],
+    params: r => ({ L: r.step(50, 300, 10), Tmin: r.step(-25, -10, 1), Tmax: r.step(35, 50, 1) }),
+    text: p => String.raw`Eine Stahlbrücke ist $L_0 = ${tx(p.L)}\,\mathrm{m}$ lang ($\alpha = 12 \cdot 10^{-6}\,\mathrm{K^{-1}}$). Im Lauf eines Jahres schwankt die Temperatur des Stahls zwischen $${tx(p.Tmin)}\,{}^\circ\mathrm{C}$ und $${tx(p.Tmax)}\,{}^\circ\mathrm{C}$.
+
+Wie groß ist die **Temperaturdifferenz** $\Delta T$, und wie breit muss die Dehnfuge mindestens sein, also wie groß ist die **Längenänderung** $\Delta L$ zwischen kältestem und wärmstem Zustand?`,
+    checks: [
+      { k: "dT", sym: "\\Delta T", name: "Temperaturdifferenz", q: "tempdiff", unit: "K", v: p => p.Tmax - p.Tmin },
+      { k: "dL", sym: "\\Delta L", name: "Längenänderung", q: "length", unit: "mm", v: p => 12e-6 * p.L * (p.Tmax - p.Tmin) },
+    ],
+    solution: p => String.raw`$$\Delta T = ${tx(p.Tmax)}\,{}^\circ\mathrm{C} - (${tx(p.Tmin)}\,{}^\circ\mathrm{C}) = ${tx(p.Tmax - p.Tmin)}\,\mathrm{K}$$
+
+$$\Delta L = \alpha\,L_0\,\Delta T = 12 \cdot 10^{-6}\,\mathrm{K^{-1}} \cdot ${tx(p.L)}\,\mathrm{m} \cdot ${tx(p.Tmax - p.Tmin)}\,\mathrm{K} = ${tx(12e-6 * p.L * (p.Tmax - p.Tmin) * 1000)}\,\mathrm{mm}$$
+
+Temperaturdifferenzen sind in Kelvin und Grad Celsius gleich – hier muss nicht in Kelvin umgerechnet werden.` },
+
+  { id: "k3-mix", ch: "3", lvl: 2, title: "Tee abkühlen", refs: ["3.2"],
+    params: r => ({ m1: r.step(0.2, 0.4, 0.05), T1: r.step(75, 95, 5), m2: r.step(0.05, 0.15, 0.01), T2: r.step(8, 20, 1), mk: r.step(0.1, 0.3, 0.05) }),
+    text: p => String.raw`In eine Kupferkanne ($m_K = ${tx(p.mk)}\,\mathrm{kg}$, $c_K = 385\,\mathrm{J/(kg\,K)}$), die zusammen mit $m_2 = ${tx(p.m2)}\,\mathrm{kg}$ kaltem Wasser die Temperatur $${tx(p.T2)}\,{}^\circ\mathrm{C}$ hat, werden $m_1 = ${tx(p.m1)}\,\mathrm{kg}$ heißer Tee ($${tx(p.T1)}\,{}^\circ\mathrm{C}$) gegossen. Tee und Wasser haben $c_W = 4190\,\mathrm{J/(kg\,K)}$; Wärmeverluste an die Umgebung werden vernachlässigt.
+
+Berechnen Sie die **Mischtemperatur** $T_m$ und die **Wärme** $Q$, die der Tee dabei abgibt.`,
+    checks: [
+      { k: "Tm", sym: "T_m", name: "Mischtemperatur", q: "temp", unit: "°C", v: p => { const cw = 4190, ck = 385; return (cw * p.m1 * p.T1 + (cw * p.m2 + ck * p.mk) * p.T2) / (cw * p.m1 + cw * p.m2 + ck * p.mk) + 273.15; } },
+      { k: "Q", sym: "Q", name: "abgegebene Wärme", q: "energy", unit: "kJ", v: p => { const cw = 4190, ck = 385, Tm = (cw * p.m1 * p.T1 + (cw * p.m2 + ck * p.mk) * p.T2) / (cw * p.m1 + cw * p.m2 + ck * p.mk); return cw * p.m1 * (p.T1 - Tm); } },
+    ],
+    solution: p => { const cw = 4190, ck = 385, Tm = (cw * p.m1 * p.T1 + (cw * p.m2 + ck * p.mk) * p.T2) / (cw * p.m1 + cw * p.m2 + ck * p.mk); return String.raw`Abgegebene Wärme = aufgenommene Wärme:
+
+$$c_W m_1 (T_1 - T_m) = (c_W m_2 + c_K m_K)(T_m - T_2)$$
+
+$$T_m = \frac{c_W m_1 T_1 + (c_W m_2 + c_K m_K)\,T_2}{c_W m_1 + c_W m_2 + c_K m_K} = ${tx(Tm)}\,{}^\circ\mathrm{C}$$
+
+$$Q = c_W\,m_1\,(T_1 - T_m) = ${tx(cw * p.m1 * (p.T1 - Tm) / 1000)}\,\mathrm{kJ}$$`; } },
+
+  { id: "k3-tire", ch: "3", lvl: 2, title: "Reifendruck im Sommer", refs: ["3.3", "3.1"],
+    params: r => ({ pu: r.step(2.0, 2.6, 0.1), T1: r.step(5, 15, 1), T2: r.step(40, 60, 5) }),
+    text: p => String.raw`Ein Autoreifen wird morgens bei $${tx(p.T1)}\,{}^\circ\mathrm{C}$ auf einen Überdruck von $p_{\ddot u,1} = ${tx(p.pu)}\,\mathrm{bar}$ aufgepumpt. Nach einer schnellen Fahrt in der Sonne hat die Luft im Reifen $${tx(p.T2)}\,{}^\circ\mathrm{C}$. Das Volumen des Reifens bleibt näherungsweise gleich, der Luftdruck der Umgebung beträgt $1{,}013\,\mathrm{bar}$.
+
+Berechnen Sie den **absoluten Druck** $p_1$ am Morgen und den **Überdruck** $p_{\ddot u,2}$ nach der Fahrt.`,
+    checks: [
+      { k: "p1", sym: "p_1", name: "absoluter Druck morgens", q: "pressure", unit: "bar", v: p => (p.pu + 1.013) * 1e5 },
+      { k: "pu2", sym: "p_{\\ddot u,2}", name: "Überdruck nach der Fahrt", q: "pressure", unit: "bar", v: p => ((p.pu + 1.013) * (p.T2 + 273.15) / (p.T1 + 273.15) - 1.013) * 1e5 },
+    ],
+    solution: p => { const p1 = p.pu + 1.013, p2 = p1 * (p.T2 + 273.15) / (p.T1 + 273.15); return String.raw`Das Gasgesetz gilt nur mit **absolutem** Druck und **absoluter** Temperatur:
+
+$$p_1 = p_{\ddot u,1} + p_\mathrm{atm} = ${tx(p.pu)}\,\mathrm{bar} + 1{,}013\,\mathrm{bar} = ${tx(p1, 4)}\,\mathrm{bar}$$
+
+Isochor: $\frac{p_2}{T_2} = \frac{p_1}{T_1}$ mit $T_1 = ${tx(p.T1 + 273.15, 5)}\,\mathrm{K}$, $T_2 = ${tx(p.T2 + 273.15, 5)}\,\mathrm{K}$:
+
+$$p_2 = p_1\,\frac{T_2}{T_1} = ${tx(p2, 4)}\,\mathrm{bar}, \qquad p_{\ddot u,2} = p_2 - p_\mathrm{atm} = ${tx(p2 - 1.013, 3)}\,\mathrm{bar}$$`; } },
+
+  { id: "k3-isotherm", ch: "3", lvl: 3, title: "Isotherme Kompression", refs: ["3.3", "3.4"],
+    params: r => ({ V1: r.step(2, 6, 1), p1: r.step(1.0, 2.0, 0.1), k: r.pick([2, 3, 4]), T: r.step(15, 30, 5) }),
+    text: p => String.raw`In einem Zylinder befinden sich $V_1 = ${tx(p.V1)}\,\mathrm{l}$ Luft bei $p_1 = ${tx(p.p1)}\,\mathrm{bar}$ und $${tx(p.T)}\,{}^\circ\mathrm{C}$ (ideales Gas). Die Luft wird langsam und **isotherm** auf ein Volumen von $V_1 / ${p.k}$ zusammengedrückt.
+
+Berechnen Sie die **Stoffmenge** $n$, den **Enddruck** $p_2$ und die am Gas verrichtete **Arbeit** $W$.`,
+    checks: [
+      { k: "n", sym: "n", name: "Stoffmenge", q: "amount", unit: "mol", v: p => p.p1 * 1e5 * p.V1 * 1e-3 / (R_GAS * (p.T + 273.15)) },
+      { k: "p2", sym: "p_2", name: "Enddruck", q: "pressure", unit: "bar", v: p => p.p1 * p.k * 1e5 },
+      { k: "W", sym: "W", name: "Arbeit am Gas", q: "energy", unit: "J", v: p => p.p1 * 1e5 * p.V1 * 1e-3 * Math.log(p.k) },
+    ],
+    solution: p => { const pV = p.p1 * 1e5 * p.V1 * 1e-3, T = p.T + 273.15; return String.raw`SI-Einheiten: $p_1 = ${tx(p.p1 * 1e5)}\,\mathrm{Pa}$, $V_1 = ${tx(p.V1 * 1e-3)}\,\mathrm{m^3}$, $T = ${tx(T, 5)}\,\mathrm{K}$, also $p_1 V_1 = ${tx(pV)}\,\mathrm{J}$.
+
+$$n = \frac{p_1 V_1}{R\,T} = ${tx(pV / (R_GAS * T))}\,\mathrm{mol}, \qquad p_2 = p_1\,\frac{V_1}{V_2} = ${tx(p.p1 * p.k)}\,\mathrm{bar}$$
+
+$$W = p_1 V_1 \ln\frac{V_1}{V_2} = ${tx(pV)}\,\mathrm{J} \cdot \ln ${p.k} = ${tx(pV * Math.log(p.k))}\,\mathrm{J}$$
+
+Weil $\Delta U = 0$ ist, gibt das Gas genau diese Energie als Wärme ab: $Q = -W$.`; } },
+
+  { id: "k3-plant", ch: "3", lvl: 3, title: "Wirkungsgrad eines Kraftwerks", refs: ["3.5", "3.1"],
+    params: r => ({ Th: r.step(500, 600, 10), Tk: r.step(20, 40, 5), P: r.step(200, 800, 50), f: r.step(0.55, 0.7, 0.05) }),
+    text: p => String.raw`Ein Dampfkraftwerk arbeitet zwischen einer Frischdampftemperatur von $${tx(p.Th)}\,{}^\circ\mathrm{C}$ und einer Kühlwassertemperatur von $${tx(p.Tk)}\,{}^\circ\mathrm{C}$. Sein tatsächlicher Wirkungsgrad erreicht $${tx(p.f * 100)}\,\%$ des Carnot-Wirkungsgrads; es liefert die Leistung $P = ${tx(p.P)}\,\mathrm{MW}$.
+
+Berechnen Sie den **Carnot-Wirkungsgrad** $\eta_C$, die zugeführte **Wärmeleistung** $\dot Q_\mathrm{zu}$ und die an das Kühlwasser abgegebene **Abwärmeleistung** $\dot Q_\mathrm{ab}$.`,
+    checks: [
+      { k: "etaC", sym: "\\eta_C", name: "Carnot-Wirkungsgrad", q: "ratio", unit: "%", v: p => 1 - (p.Tk + 273.15) / (p.Th + 273.15) },
+      { k: "Qzu", sym: "\\dot Q_\\mathrm{zu}", name: "zugeführte Wärmeleistung", q: "power", unit: "MW", v: p => p.P * 1e6 / (p.f * (1 - (p.Tk + 273.15) / (p.Th + 273.15))) },
+      { k: "Qab", sym: "\\dot Q_\\mathrm{ab}", name: "Abwärmeleistung", q: "power", unit: "MW", v: p => p.P * 1e6 / (p.f * (1 - (p.Tk + 273.15) / (p.Th + 273.15))) - p.P * 1e6 },
+    ],
+    solution: p => { const eC = 1 - (p.Tk + 273.15) / (p.Th + 273.15), e = p.f * eC, Q = p.P / e; return String.raw`Temperaturen in Kelvin: $T_h = ${tx(p.Th + 273.15, 5)}\,\mathrm{K}$, $T_k = ${tx(p.Tk + 273.15, 5)}\,\mathrm{K}$
+
+$$\eta_C = 1 - \frac{T_k}{T_h} = ${tx(eC * 100)}\,\%, \qquad \eta = ${tx(p.f)} \cdot \eta_C = ${tx(e * 100)}\,\%$$
+
+$$\dot Q_\mathrm{zu} = \frac{P}{\eta} = ${tx(Q)}\,\mathrm{MW}, \qquad \dot Q_\mathrm{ab} = \dot Q_\mathrm{zu} - P = ${tx(Q - p.P)}\,\mathrm{MW}$$
+
+Mit Celsius-Temperaturen erhielte man einen viel zu hohen Wirkungsgrad.`; } },
+
+  // ------------------------------------------------------------------ 4 Spezielle Relativitätstheorie
+  { id: "k4-muon", ch: "4", lvl: 1, title: "Myonen aus der Höhenstrahlung", refs: ["4.2", "4.1"],
+    params: r => ({ b: r.step(0.990, 0.999, 0.001) }),
+    text: p => String.raw`Ein Myon hat in seinem Ruhesystem die mittlere Lebensdauer $\tau_0 = 2{,}2\,\mu\mathrm{s}$. Es fliegt mit $v = ${tx(p.b, 3)}\,c$ auf die Erde zu.
+
+Berechnen Sie den **Lorentzfaktor** $\gamma$, die **Lebensdauer** $\tau$ im System der Erde und die **Strecke** $s$, die das Myon in dieser Zeit im Mittel zurücklegt.`,
+    checks: [
+      { k: "g", sym: "\\gamma", name: "Lorentzfaktor", q: "none", unit: "", v: p => gam(p.b) },
+      { k: "tau", sym: "\\tau", name: "Lebensdauer im Erdsystem", q: "time", unit: "µs", v: p => gam(p.b) * 2.2e-6 },
+      { k: "s", sym: "s", name: "Flugstrecke", q: "length", unit: "km", v: p => p.b * C * gam(p.b) * 2.2e-6 },
+    ],
+    solution: p => { const g = gam(p.b); return String.raw`$$\gamma = \frac{1}{\sqrt{1 - \beta^2}} = \frac{1}{\sqrt{1 - ${tx(p.b, 3)}^2}} = ${tx(g)}$$
+
+$$\tau = \gamma\,\tau_0 = ${tx(g)} \cdot 2{,}2\,\mu\mathrm{s} = ${tx(g * 2.2)}\,\mu\mathrm{s}$$
+
+$$s = v\,\tau = ${tx(p.b, 3)} \cdot 3{,}00 \cdot 10^8\,\mathrm{m/s} \cdot ${tx(g * 2.2)} \cdot 10^{-6}\,\mathrm{s} = ${tx(p.b * C * g * 2.2e-6 / 1000)}\,\mathrm{km}$$
+
+Ohne Zeitdilatation wären es nur $${tx(p.b * C * 2.2e-6)}\,\mathrm{m}$.`; } },
+
+  { id: "k4-ship", ch: "4", lvl: 1, title: "Raumschiff im Vorbeiflug", refs: ["4.3", "4.1"],
+    params: r => ({ L: r.step(80, 300, 10), b: r.step(0.5, 0.95, 0.05) }),
+    text: p => String.raw`Ein Raumschiff hat in seinem Ruhesystem die Länge $L_0 = ${tx(p.L)}\,\mathrm{m}$. Es fliegt mit $v = ${tx(p.b)}\,c$ an einer Raumstation vorbei.
+
+Berechnen Sie den **Lorentzfaktor** $\gamma$ und die **Länge** $L$, die man auf der Raumstation misst.`,
+    checks: [
+      { k: "g", sym: "\\gamma", name: "Lorentzfaktor", q: "none", unit: "", v: p => gam(p.b) },
+      { k: "L", sym: "L", name: "gemessene Länge", q: "length", unit: "m", v: p => p.L / gam(p.b) },
+    ],
+    solution: p => String.raw`$$\gamma = \frac{1}{\sqrt{1 - ${tx(p.b)}^2}} = ${tx(gam(p.b), 4)}, \qquad L = \frac{L_0}{\gamma} = \frac{${tx(p.L)}\,\mathrm{m}}{${tx(gam(p.b), 4)}} = ${tx(p.L / gam(p.b))}\,\mathrm{m}$$
+
+Die Länge schrumpft nur in Flugrichtung; Breite und Höhe bleiben gleich.` },
+
+  { id: "k4-travel", ch: "4", lvl: 2, title: "Reise zu einem Stern", refs: ["4.2", "4.3"],
+    params: r => { const s = r.pick([["Proxima Centauri", 4.2], ["Sirius", 8.6], ["Epsilon Eridani", 10.5], ["Altair", 16.7]]); return { star: s[0], d: s[1], b: r.step(0.6, 0.95, 0.05) }; },
+    text: p => String.raw`Ein Raumschiff fliegt mit konstant $v = ${tx(p.b)}\,c$ zum Stern ${p.star}, der von der Erde $d = ${tx(p.d)}$ Lichtjahre entfernt ist (Beschleunigungsphasen vernachlässigt).
+
+Wie lange dauert der Flug **im System der Erde** ($t_E$) und **für die Besatzung** ($t_S$)? Wie lang ist die **Strecke** $d'$ aus Sicht der Besatzung?`,
+    checks: [
+      { k: "tE", sym: "t_E", name: "Flugdauer im Erdsystem", q: "time", unit: "a", v: p => p.d / p.b * 3.15576e7 },
+      { k: "tS", sym: "t_S", name: "Flugdauer für die Besatzung", q: "time", unit: "a", v: p => p.d / p.b / gam(p.b) * 3.15576e7 },
+      { k: "d2", sym: "d'", name: "Strecke für die Besatzung", q: "length", unit: "Lj", v: p => p.d / gam(p.b) * LY },
+    ],
+    solution: p => { const tE = p.d / p.b, g = gam(p.b); return String.raw`Ein Lichtjahr ist die Strecke, die Licht in einem Jahr zurücklegt. Deshalb gilt in Jahren:
+
+$$t_E = \frac{d}{v} = \frac{${tx(p.d)}\,\mathrm{Lj}}{${tx(p.b)}\,c} = ${tx(tE)}\,\mathrm{Jahre}$$
+
+Mit $\gamma = ${tx(g, 4)}$ vergeht für die Besatzung $t_S = \frac{t_E}{\gamma} = ${tx(tE / g)}\,\mathrm{Jahre}$.
+
+Für die Besatzung ist die Strecke verkürzt: $d' = \frac{d}{\gamma} = ${tx(p.d / g)}\,\mathrm{Lj}$ – und tatsächlich ist $d'/v = t_S$.`; } },
+
+  { id: "k4-electron", ch: "4", lvl: 2, title: "Elektronen in einer Beschleunigerröhre", refs: ["4.4", "4.1"],
+    params: r => ({ U: r.step(100, 800, 50) }),
+    text: p => String.raw`Elektronen ($m_e c^2 = 0{,}511\,\mathrm{MeV}$) werden aus der Ruhe durch die Spannung $U = ${tx(p.U)}\,\mathrm{kV}$ beschleunigt.
+
+Berechnen Sie ihre **kinetische Energie** $E_\mathrm{kin}$, den **Lorentzfaktor** $\gamma$ und ihre **Geschwindigkeit** $v$ (gern als Vielfaches von $c$).`,
+    checks: [
+      { k: "E", sym: "E_\\mathrm{kin}", name: "kinetische Energie", q: "energy", unit: "keV", v: p => p.U * 1e3 * 1.602176634e-19 },
+      { k: "g", sym: "\\gamma", name: "Lorentzfaktor", q: "none", unit: "", v: p => 1 + p.U / 511 },
+      { k: "v", sym: "v", name: "Geschwindigkeit", q: "velocity", unit: "c", v: p => { const g = 1 + p.U / 511; return Math.sqrt(1 - 1 / (g * g)) * C; } },
+    ],
+    solution: p => { const g = 1 + p.U / 511, b = Math.sqrt(1 - 1 / (g * g)), bk = Math.sqrt(2 * p.U / 511); return String.raw`Jedes Elektron gewinnt $E_\mathrm{kin} = e\,U = ${tx(p.U)}\,\mathrm{keV}$.
+
+$$\gamma = 1 + \frac{E_\mathrm{kin}}{m_e c^2} = 1 + \frac{${tx(p.U)}\,\mathrm{keV}}{511\,\mathrm{keV}} = ${tx(g, 4)}$$
+
+$$\beta = \sqrt{1 - \frac{1}{\gamma^2}} = ${tx(b, 4)} \quad\Rightarrow\quad v = ${tx(b, 4)}\,c = ${tx(b * C)}\,\mathrm{m/s}$$
+
+Klassisch ergäbe sich $v = \sqrt{2 E_\mathrm{kin}/m_e} = ${tx(bk, 3)}\,c$${bk > 1 ? " – schneller als das Licht, also unmöglich" : " – zu groß"}.`; } },
+
+  { id: "k4-probe", ch: "4", lvl: 3, title: "Sonden vom Raumschiff", refs: ["4.5", "4.1"],
+    params: r => ({ u: r.step(0.5, 0.9, 0.1), w: r.step(0.5, 0.9, 0.1) }),
+    text: p => String.raw`Ein Raumschiff fliegt mit $u = ${tx(p.u)}\,c$ von der Erde weg. Es startet zwei Sonden, jede mit $v' = ${tx(p.w)}\,c$ relativ zum Raumschiff: eine **nach vorn** und eine **nach hinten** (in Richtung Erde).
+
+Berechnen Sie die Geschwindigkeiten $v_\mathrm{vor}$ und $v_\mathrm{r\ddot{u}ck}$ der beiden Sonden im System der Erde (positiv = von der Erde weg) sowie den **Lorentzfaktor** $\gamma_\mathrm{vor}$ der vorderen Sonde gegenüber der Erde.`,
+    checks: [
+      { k: "vv", sym: "v_\\mathrm{vor}", name: "Sonde nach vorn", q: "velocity", unit: "c", v: p => (p.u + p.w) / (1 + p.u * p.w) * C },
+      { k: "vr", sym: "v_\\mathrm{r\\ddot{u}ck}", name: "Sonde nach hinten", q: "velocity", unit: "c", v: p => (p.u - p.w) / (1 - p.u * p.w) * C, abs: 1e-6 * C },
+      { k: "g", sym: "\\gamma_\\mathrm{vor}", name: "Lorentzfaktor der vorderen Sonde", q: "none", unit: "", v: p => gam((p.u + p.w) / (1 + p.u * p.w)) },
+    ],
+    solution: p => { const vv = (p.u + p.w) / (1 + p.u * p.w), vr = (p.u - p.w) / (1 - p.u * p.w); return String.raw`$$v_\mathrm{vor} = \frac{u + v'}{1 + u v'/c^2} = \frac{${tx(p.u)} + ${tx(p.w)}}{1 + ${tx(p.u)} \cdot ${tx(p.w)}}\,c = ${tx(vv, 4)}\,c$$
+
+Für die hintere Sonde $v'$ durch $-v'$ ersetzen:
+
+$$v_\mathrm{r\ddot{u}ck} = \frac{u - v'}{1 - u v'/c^2} = ${tx(vr, 4)}\,c$$
+
+${Math.abs(vr) < 1e-9 ? "Die hintere Sonde steht also relativ zur Erde still." : vr < 0 ? "Das negative Vorzeichen bedeutet: Die hintere Sonde fliegt auf die Erde zu." : "Die hintere Sonde fliegt also langsamer, aber weiter von der Erde weg."}
+
+$$\gamma_\mathrm{vor} = \frac{1}{\sqrt{1 - ${tx(vv, 4)}^2}} = ${tx(gam(vv), 4)}$$
+
+Klassisch wäre $v_\mathrm{vor} = ${tx(p.u + p.w)}\,c$${p.u + p.w > 1 ? " – schneller als das Licht" : ""}.`; } },
+
+  { id: "k4-proton", ch: "4", lvl: 3, title: "Protonen im Ringbeschleuniger", refs: ["4.4", "4.1"],
+    params: r => ({ E: r.pick([450, 1000, 3500, 6800]) }),
+    text: p => String.raw`In einem Ringbeschleuniger kreisen Protonen ($m_p c^2 = 938{,}3\,\mathrm{MeV}$) mit der Gesamtenergie $E = ${tx(p.E)}\,\mathrm{GeV}$.
+
+Berechnen Sie den **Lorentzfaktor** $\gamma$, die Größe $1 - \beta$ (wie knapp unter der Lichtgeschwindigkeit fliegen die Protonen?) und den **Impuls** $p$ in $\mathrm{GeV}/c$.`,
+    checks: [
+      { k: "g", sym: "\\gamma", name: "Lorentzfaktor", q: "none", unit: "", v: p => p.E / 0.9383 },
+      { k: "omb", sym: "1 - \\beta", name: "Abstand zur Lichtgeschwindigkeit", q: "none", unit: "", tol: 0.02, v: p => { const g = p.E / 0.9383, ig = 1 / (g * g); return ig / (1 + Math.sqrt(1 - ig)); } },
+      { k: "p", sym: "p", name: "Impuls", q: "momentum", unit: "GeV/c", v: p => Math.sqrt(p.E ** 2 - 0.9383 ** 2) * 5.344286e-19 },
+    ],
+    solution: p => { const g = p.E / 0.9383; return String.raw`$$\gamma = \frac{E}{m_p c^2} = \frac{${tx(p.E)}\,\mathrm{GeV}}{0{,}9383\,\mathrm{GeV}} = ${tx(g, 4)}$$
+
+Der Taschenrechner liefert für $1 - \sqrt{1 - 1/\gamma^2}$ meist 0. Mit $\beta = \sqrt{1 - 1/\gamma^2} \approx 1 - \frac{1}{2\gamma^2}$:
+
+$$1 - \beta \approx \frac{1}{2\gamma^2} = ${tx(1 / (2 * g * g), 3)}$$
+
+$$p\,c = \sqrt{E^2 - (m_p c^2)^2} = ${tx(Math.sqrt(p.E ** 2 - 0.9383 ** 2), 5)}\,\mathrm{GeV} \quad\Rightarrow\quad p = ${tx(Math.sqrt(p.E ** 2 - 0.9383 ** 2), 5)}\,\mathrm{GeV}/c$$
+
+Bei so großen Energien ist $p\,c \approx E$.`; } },
+];
+
+/* ====================================================================== Zahlen und Einheiten
+   Eingaben wie „12,5 m/s“, „3,2·10^-6 s“, „40 %“, „0,98 c“ werden in SI-Einheiten umgerechnet. */
+const EV = 1.602176634e-19;
+const UNITS = {
+  length: { m: 1, km: 1e3, cm: 1e-2, mm: 1e-3, um: 1e-6, nm: 1e-9, Lj: LY, ly: LY },
+  time: { s: 1, ms: 1e-3, us: 1e-6, ns: 1e-9, min: 60, h: 3600, d: 86400, a: 3.15576e7, Jahre: 3.15576e7, Jahr: 3.15576e7, y: 3.15576e7 },
+  velocity: { "m/s": 1, "km/h": 1 / 3.6, "km/s": 1e3, c: C },
+  accel: { "m/s2": 1 },
+  mass: { kg: 1, g: 1e-3, t: 1e3 },
+  force: { N: 1, kN: 1e3, MN: 1e6, mN: 1e-3 },
+  energy: { J: 1, kJ: 1e3, MJ: 1e6, GJ: 1e9, Wh: 3600, kWh: 3.6e6, eV: EV, keV: 1e3 * EV, MeV: 1e6 * EV, GeV: 1e9 * EV, TeV: 1e12 * EV, Nm: 1 },
+  power: { W: 1, kW: 1e3, MW: 1e6, GW: 1e9, mW: 1e-3 },
+  pressure: { Pa: 1, hPa: 1e2, kPa: 1e3, MPa: 1e6, bar: 1e5, mbar: 1e2 },
+  temp: { K: [1, 0], "°C": [1, 273.15], C: [1, 273.15] },
+  tempdiff: { K: 1, "°C": 1, C: 1 },
+  amount: { mol: 1, mmol: 1e-3, kmol: 1e3 },
+  angle: { "°": Math.PI / 180, deg: Math.PI / 180, Grad: Math.PI / 180, rad: 1 },
+  momentum: { "kgm/s": 1, Ns: 1, "GeV/c": 1e9 * EV / C, "MeV/c": 1e6 * EV / C, "TeV/c": 1e12 * EV / C },
+  ratio: { "": 1, "%": 0.01 },
+  none: { "": 1 },
+};
+const QNAMES = { length: "Länge", time: "Zeit", velocity: "Geschwindigkeit", accel: "Beschleunigung", mass: "Masse", force: "Kraft", energy: "Energie", power: "Leistung", pressure: "Druck", temp: "Temperatur", tempdiff: "Temperaturdifferenz", amount: "Stoffmenge", angle: "Winkel", momentum: "Impuls", ratio: "Verhältnis", none: "Zahl ohne Einheit" };
+// Einheit vereinheitlichen: Leerzeichen und Malpunkte weg, Hochzahlen als Ziffer, µ als u
+const canonUnit = u => u.replace(/[\s·⋅*]/g, "").replace(/\^?²|\^2/g, "2").replace(/\^?³|\^3/g, "3").replace(/[µμ]/g, "u").replace(/^°?([CK])$/, (a, x) => x === "C" ? "°C" : "K").replace(/^grad$/i, "Grad");
+function unitTable(q) {
+  const t = {};
+  for (const [k, v] of Object.entries(UNITS[q] || {})) t[canonUnit(k)] = v;
+  return t;
+}
+// liefert {ok, si, unit, num} oder {ok:false, why}
+function parseQuantity(input, q) {
+  const s = String(input || "").trim().replace(/−/g, "-");
+  if (!s) return { ok: false, why: "empty" };
+  const m = /^([+-]?\s*(?:\d+(?:[.,]\d*)?|[.,]\d+))\s*(?:(?:[eE]\s*([+-]?\d+))|(?:[·*x×⋅]\s*10\s*\^\s*\(?\s*([+-]?\d+)\s*\)?))?\s*(.*)$/.exec(s);
+  if (!m) return { ok: false, why: "number" };
+  let num = parseFloat(m[1].replace(/\s/g, "").replace(",", "."));
+  const ex = m[2] ?? m[3];
+  if (ex !== undefined) num *= Math.pow(10, parseInt(ex, 10));
+  if (!isFinite(num)) return { ok: false, why: "number" };
+  const unitRaw = m[4].trim();
+  const table = unitTable(q), key = canonUnit(unitRaw);
+  if (!(key in table)) {
+    if (!unitRaw) return { ok: false, why: "nounit", num };
+    // Einheit einer anderen Größe?
+    const other = Object.keys(UNITS).find(qq => qq !== q && qq !== "tempdiff" && key in unitTable(qq));
+    return { ok: false, why: other ? "wrongq" : "unknownunit", num, unit: unitRaw, other };
+  }
+  const f = table[key];
+  const si = Array.isArray(f) ? num * f[0] + f[1] : num * f;
+  return { ok: true, si, num, unit: unitRaw };
+}
+// Wert in einer Einheit ausgeben (für Musterlösung/Rückmeldung)
+function inUnit(si, q, unit) {
+  const f = unitTable(q)[canonUnit(unit)];
+  if (f === undefined) return si;
+  return Array.isArray(f) ? (si - f[1]) / f[0] : si / f;
+}
+// Prüfung eines Kontrollpunkts: status ok | sign | power | factor2 | wrong | nounit | wrongq | unknownunit | number | empty
+function judge(cp, p, input) {
+  const exp = cp.v(p);
+  const r = parseQuantity(input, cp.q);
+  const tolOf = e => cp.q === "temp" ? 0.3 : Math.max(Math.abs(e) * (cp.tol || 0.01), cp.abs || 1e-300);
+  const near = (a, e) => Math.abs(a - e) <= tolOf(e);
+  if (!r.ok) {
+    // Einheit vergessen, Zahl in SI-Einheit wäre richtig?
+    if (r.why === "nounit" && near(r.num, exp)) return { st: "nounitsi", exp };
+    return { st: r.why, exp, r };
+  }
+  if (near(r.si, exp)) return { st: "ok", exp, r };
+  if (cp.q !== "temp" && near(-r.si, exp) && Math.abs(exp) > 0) return { st: "sign", exp, r };
+  if (cp.q !== "temp" && exp !== 0 && r.si !== 0) {
+    const ratio = r.si / exp, k = Math.round(Math.log10(Math.abs(ratio)));
+    if (k !== 0 && Math.abs(k) <= 12 && Math.abs(Math.abs(ratio) / Math.pow(10, k) - 1) < 0.02) return { st: "power", exp, r };
+    if (Math.abs(Math.abs(ratio) - 2) < 0.02 || Math.abs(Math.abs(ratio) - 0.5) < 0.01) return { st: "factor2", exp, r };
+  }
+  return { st: "wrong", exp, r };
+}
+
+"use strict";
+/* ====================================================================== Grundlagen */
+const VERSION = "1.0";
+const CLAUDE_URL = "https://claude.ai/artifact/8RCA5axkuq7qL9z5iaBoFC";   // Claude-Version mit KI-Tutor (für die Version ohne Tutor)
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function announce(text) { const a = $("announce"); a.textContent = ""; setTimeout(() => { a.textContent = text; }, 30); }
+function ticker(fn) { const t0 = Date.now(); fn(0); const id = setInterval(() => fn(Math.round((Date.now() - t0) / 1000)), 1000); return () => clearInterval(id); }
+const fmtSecs = s => s < 60 ? s + " s" : Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") + " min";
+const LEVELS = ["", "Einstieg", "Anwendung", "Transfer"];
+
+// Zahl für Formeln: signifikante Stellen, Dezimalkomma als {,}, große/kleine Zahlen mit Zehnerpotenz
+function numStr(x, sig = 3) {
+  if (!isFinite(x)) return "–";
+  if (x === 0) return "0";
+  const r = Number(x.toPrecision(sig)), a = Math.abs(r);
+  if (a >= 1e6 || a < 1e-3) {
+    const e = Math.floor(Math.log10(a)); const m = Number((r / Math.pow(10, e)).toPrecision(sig));
+    return { m: String(m), e };
+  }
+  return String(r);
+}
+function tx(x, sig = 3) {
+  const s = numStr(x, sig);
+  if (typeof s === "object") return `${s.m.replace(".", "{,}")} \\cdot 10^{${s.e}}`;
+  return s.replace(".", "{,}");
+}
+function plain(x, sig = 3) {
+  const s = numStr(x, sig);
+  if (typeof s === "object") return `${s.m.replace(".", ",")}·10^${s.e}`;
+  return s.replace(".", ",");
+}
+
+/* ---- Zufallszahlen mit Startwert: jede Aufgabe hat eigene, aber reproduzierbare Zahlen */
+function rng(seed) {
+  let a = seed >>> 0;
+  const next = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  return {
+    next,
+    step(a0, b0, st) { const n = Math.round((b0 - a0) / st); return Number((a0 + st * Math.floor(next() * (n + 1))).toFixed(6)); },
+    pick(arr) { return arr[Math.floor(next() * arr.length)]; },
+  };
+}
+const newSeed = () => Math.floor(Math.random() * 2 ** 31);
+
+/* ====================================================================== Formeln und Markdown */
+function texHtml(src, display) {
+  if (window.katex) { try { return katex.renderToString(src, { displayMode: display, throwOnError: false, output: "html", strict: "ignore" }); } catch (e) {} }
+  return `<code>${esc(src)}</code>`;
+}
+function mathOut(text, store) {
+  const keep = html => { store.push(html); return "\u0000" + (store.length - 1) + "\u0000"; };
+  return text.split(/(`[^`\n]*`)/).map((seg, i) => i % 2 ? seg : seg
+    .replace(/\$\$([\s\S]+?)\$\$/g, (a, m) => keep(texHtml(m.trim(), true)))
+    .replace(/(^|[^\\$\w])\$(?=\S)([^$\n]*?\S)\$(?![\w$])/g, (a, pre, m) => pre + keep(texHtml(m, false)))
+  ).join("");
+}
+const mathIn = (html, store) => html.replace(/\u0000(\d+)\u0000/g, (a, n) => store[+n]);
+const SEC = {};
+SKRIPT.forEach(c => c.sections.forEach(s => { SEC[s.id] = { ...s, ch: c.ch }; }));
+const refChip = id => SEC[id] ? `<a class="ref" href="#skript-${id}" data-sec="${id}"><b>${esc(id)}</b>${esc(SEC[id].title)}</a>` : esc(id);
+function inlineMd(s) {
+  const codes = [];
+  return s
+    .replace(/`([^`\n]+)`/g, (all, c) => { codes.push(c); return "\u0001" + (codes.length - 1) + "\u0001"; })
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
+    .replace(/\[\[\s*(\d\.\d)\s*\]\]/g, (all, id) => SEC[id] ? refChip(id) : all)
+    .replace(/\u0001(\d+)\u0001/g, (all, n) => `<code>${codes[+n]}</code>`);
+}
+function md(text) {
+  const store = [];
+  const lines = esc(mathOut(String(text), store)).split("\n");
+  let html = "", list = null, para = [];
+  const flush = () => { if (para.length) { html += `<p>${inlineMd(para.join("<br>"))}</p>`; para = []; } };
+  const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    const ul = /^\s*[-*]\s+(.*)$/.exec(line), ol = /^\s*\d+\.\s+(.*)$/.exec(line);
+    if (ul || ol) {
+      flush();
+      const type = ul ? "ul" : "ol";
+      if (list !== type) { closeList(); html += `<${type}>`; list = type; }
+      html += `<li>${inlineMd((ul || ol)[1])}</li>`;
+    } else if (line.trim() === "") { flush(); closeList(); }
+    else if (/^#{1,4}\s/.test(line)) { flush(); closeList(); html += `<p><strong>${inlineMd(line.replace(/^#+\s/, ""))}</strong></p>`; }
+    else { closeList(); para.push(line); }
+  }
+  flush(); closeList();
+  return mathIn(html, store);
+}
+const mdInline = text => md(text).replace(/^<p>|<\/p>$/g, "");
+
+/* ====================================================================== Zustand */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("pt." + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("pt." + k, JSON.stringify(v)); } catch (e) {} },
+};
+const CH_ORDER = SKRIPT.map(c => c.ch);
+const S = {
+  progress: store.get("progress", {}),   // id -> {solved, attempts, hints, peeked, clean, seed, inputs}
+  levels: store.get("levels", {}),
+  mode: store.get("mode", "auto"),
+  selected: new Set(store.get("selected", CH_ORDER)),
+  expanded: new Set(store.get("expanded", [])),
+  currentId: store.get("current", null),
+  welcomed: store.get("welcomed", false),
+  lastJudge: null,
+};
+const save = () => {
+  store.set("progress", S.progress); store.set("levels", S.levels); store.set("mode", S.mode); store.set("selected", [...S.selected]);
+  store.set("expanded", [...S.expanded]); store.set("current", S.currentId); store.set("welcomed", S.welcomed);
+};
+const byId = id => TASKS.find(e => e.id === id);
+const current = () => byId(S.currentId);
+const prog = id => (S.progress[id] ||= { solved: false, attempts: 0, hints: 0, peeked: false, clean: false, seed: newSeed(), inputs: {} });
+const paramsOf = ex => ex.params(rng(prog(ex.id).seed));
+const chapterTasks = ch => TASKS.filter(e => e.ch === ch);
+const lvlState = ch => (S.levels[ch] ||= { level: 1, streak: 0, struggle: 0 });
+const targetLevel = ch => S.mode === "auto" ? lvlState(ch).level : Number(S.mode);
+const chTitle = ch => SKRIPT.find(c => c.ch === ch).title;
+
+/* ====================================================================== Aufgabenwahl und Stufen (wie im CodingTrainer) */
+function pickNext(excludeId) {
+  const chs = CH_ORDER.filter(c => S.selected.has(c));
+  if (!chs.length) return null;
+  const score = c => { const ex = chapterTasks(c); return ex.filter(e => prog(e.id).solved).length / ex.length; };
+  const order = chs.map(c => ({ c, s: score(c) + Math.random() * 0.25 })).sort((x, y) => x.s - y.s).map(x => x.c);
+  const cand = [];
+  order.forEach((c, rank) => chapterTasks(c).filter(e => !prog(e.id).solved && e.id !== excludeId)
+    .forEach(e => cand.push({ e, d: Math.abs(e.lvl - targetLevel(c)), rank })));
+  if (!cand.length) return null;
+  const bestD = Math.min(...cand.map(x => x.d)), close = cand.filter(x => x.d === bestD);
+  const bestRank = Math.min(...close.map(x => x.rank)), pool = close.filter(x => x.rank === bestRank).map(x => x.e);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+let adaptMsg = "";
+function adapt(ex, kind) {
+  const st = lvlState(ex.ch);
+  adaptMsg = "";
+  if (kind === "clean") {
+    st.streak += 1; st.struggle = 0;
+    if (st.streak >= 2 && st.level < 3) { st.level += 1; st.streak = 0; adaptMsg = `Stark! In Kapitel ${ex.ch} geht es jetzt auf Stufe ${st.level} weiter.`; }
+  } else if (kind === "solved") st.streak = 0;
+  else if (kind === "struggle" || kind === "peek") {
+    st.streak = 0; st.struggle += 1;
+    if (st.struggle >= (kind === "peek" ? 1 : 2) && st.level > 1) { st.level -= 1; st.struggle = 0; adaptMsg = `In Kapitel ${ex.ch} geht es auf Stufe ${st.level} weiter – erst festigen, dann steigern.`; }
+  }
+  save(); renderLevel();
+}
+
+/* ====================================================================== Darstellung */
+const pips = n => `<span class="pips" role="img" aria-label="Stufe ${n} von 3">${[1, 2, 3].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
+function renderHeader() {
+  $("tb-version").textContent = "v" + VERSION;
+  $("subtitle").innerHTML = `Übungen zum Skript „<a href="#skript" data-sec="">${esc(SKRIPT_TITLE)}</a>“ · Hochschule Trier · v${VERSION}`;
+  const done = TASKS.filter(e => prog(e.id).solved).length;
+  $("solved-count").textContent = `${done} / ${TASKS.length}`;
+}
+function renderChapters() {
+  $("chapters").innerHTML = SKRIPT.map(c => {
+    const ex = chapterTasks(c.ch), solved = ex.filter(e => prog(e.id).solved).length, on = S.selected.has(c.ch), open = S.expanded.has(c.ch);
+    const list = open ? `<ul class="ex-list" id="exl-${c.ch}">${ex.map(e => {
+      const p = prog(e.id), st = p.solved ? "solved" : p.peeked ? "peek" : p.attempts ? "tried" : "";
+      const stTxt = { solved: "gelöst", peek: "Lösung angesehen", tried: "versucht", "": "offen" }[st];
+      return `<li><button type="button" class="${e.lvl === targetLevel(e.ch) ? "" : "off-level"}" data-ex="${e.id}" aria-current="${e.id === S.currentId}"><span class="ex-state ${st}" aria-hidden="true"></span><span>${esc(e.title)}<span class="sr">, Stufe ${e.lvl} von 3, ${stTxt}</span></span>${pips(e.lvl).replace('role="img"', 'aria-hidden="true"')}</button></li>`;
+    }).join("")}</ul>` : "";
+    return `<li class="chap ${on ? "" : "off"}"><div class="chap-row"><label><input type="checkbox" data-ch="${c.ch}" ${on ? "checked" : ""} aria-label="Kapitel ${c.ch} bei „Nächste Aufgabe“ berücksichtigen"></label><button type="button" class="chap-open" data-open="${c.ch}" aria-expanded="${open}"><span class="chap-num">${c.ch}</span><span class="chap-title">${esc(c.title)}</span><span class="chap-count">${solved}/${ex.length}</span><span class="caret" aria-hidden="true">▶</span></button><span class="chap-bar" aria-hidden="true"><i style="width:${100 * solved / ex.length}%"></i></span></div>${list}</li>`;
+  }).join("");
+  $("toggle-all").textContent = S.selected.size === CH_ORDER.length ? "keine wählen" : "alle wählen";
+  $("legend").innerHTML = `<span><i class="ex-state"></i>offen</span><span><i class="ex-state tried"></i>versucht</span><span><i class="ex-state solved"></i>gelöst</span><span><i class="ex-state peek"></i>Lösung angesehen</span><span>☑ = Kapitel wird bei „Nächste Aufgabe“ berücksichtigt</span>`;
+}
+function renderLevel() {
+  document.querySelectorAll("#mode-seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode) === String(S.mode)));
+  const ex = current(), ch = ex ? ex.ch : "1", l = lvlState(ch).level;
+  $("level-note").innerHTML = S.mode === "auto"
+    ? `Automatisch: Stufe <b>${l}</b> (${LEVELS[l]}) in Kapitel ${ch}. Zwei saubere Lösungen in Folge → eine Stufe höher.`
+    : `Feste Stufe ${S.mode} (${LEVELS[S.mode]}) für alle gewählten Kapitel.`;
+}
+function renderTask() {
+  const ex = current();
+  if (!ex) {
+    $("task-title").textContent = "Alles erledigt";
+    $("task-tag").innerHTML = "";
+    $("task-body").innerHTML = `<p class="empty">${S.selected.size ? "Sie haben alle Aufgaben der gewählten Kapitel gelöst. Wählen Sie weitere Kapitel aus." : "Wählen Sie in der Kapitelliste mindestens ein Kapitel aus."}</p>`;
+    $("task-refs").innerHTML = ""; ["work-panel", "check-panel"].forEach(id => { $(id).hidden = true; }); $("result-panel").hidden = true;
+    return;
+  }
+  ["work-panel", "check-panel"].forEach(id => { $(id).hidden = false; });
+  const p = paramsOf(ex);
+  $("task-title").textContent = ex.title;
+  $("task-tag").innerHTML = `<span>Kapitel ${ex.ch} · ${esc(chTitle(ex.ch))}</span><span class="tag-lvl">${pips(ex.lvl)} ${LEVELS[ex.lvl]}</span>`;
+  $("task-body").innerHTML = md(ex.text(p));
+  $("task-refs").innerHTML = `<span class="eyebrow">Im Skript:</span> ${ex.refs.map(refChip).join(" ")}`;
+  $("mbar-info").textContent = `Kap. ${ex.ch} · ${ex.title}`;
+}
+function placeholderFor(cp) { return cp.unit ? `z.B. 12,5 ${cp.unit}` : "Zahl, z.B. 1,25"; }
+function renderChecks() {
+  const ex = current(); if (!ex) return;
+  const p = prog(ex.id);
+  $("checks").innerHTML = ex.checks.map(cp => `<div class="cp" data-k="${cp.k}">
+      <label class="cp-l" for="cp-${cp.k}"><span class="sym">${texHtml(cp.sym, false)}</span><span class="nm">${esc(cp.name)}</span></label>
+      <input id="cp-${cp.k}" type="text" inputmode="text" autocomplete="off" spellcheck="false" value="${esc(p.inputs[cp.k] || "")}" placeholder="${esc(placeholderFor(cp))}" aria-describedby="cpm-${cp.k}">
+      <span class="cp-msg" id="cpm-${cp.k}" aria-live="polite"></span></div>`).join("");
+  setCheckStatus("");
+  if (S.lastJudge && S.lastJudge.id === ex.id) showJudge(S.lastJudge.res, false);
+}
+$("checks").addEventListener("input", e => {
+  const ex = current(), k = e.target.closest(".cp")?.dataset.k;
+  if (!ex || !k) return;
+  prog(ex.id).inputs[k] = e.target.value;
+  e.target.className = ""; const m = $("cpm-" + k); m.textContent = ""; m.className = "cp-msg";
+  clearTimeout(renderChecks._t); renderChecks._t = setTimeout(save, 300);
+});
+$("checks").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.tagName === "INPUT") { e.preventDefault(); checkNow(); } });
+function setCheckStatus(text, kind) { const el = $("check-status"); el.textContent = text; el.className = "check-status" + (kind ? " " + kind : ""); el.hidden = !text; }
+
+/* ---- Prüfen */
+function msgFor(cp, j) {
+  const firstUnit = Object.keys(UNITS[cp.q])[0];
+  switch (j.st) {
+    case "ok": return ["ok", "✓ stimmt"];
+    case "empty": return ["warn", "noch leer"];
+    case "number": return ["bad", "Zahl nicht erkannt – Beispiel: 12,5 m/s oder 3,2·10^-6 s"];
+    case "nounit": return ["warn", `Bitte mit Einheit angeben, z.B. „… ${cp.unit || firstUnit}“`];
+    case "nounitsi": return ["warn", `Die Zahl stimmt in ${firstUnit} – bitte die Einheit dazuschreiben`];
+    case "wrongq": return ["bad", `„${j.r.unit}“ ist eine Einheit für ${QNAMES[j.r.other]}, gesucht ist ${QNAMES[cp.q] === "Verhältnis" ? "ein Verhältnis (Zahl oder %)" : "eine " + QNAMES[cp.q]}`];
+    case "unknownunit": return ["bad", `Einheit „${j.r.unit}“ kenne ich nicht – möglich sind z.B. ${Object.keys(UNITS[cp.q]).filter(Boolean).slice(0, 4).join(", ")}`];
+    case "sign": return ["bad", "Der Betrag stimmt, das Vorzeichen nicht"];
+    case "power": return ["bad", "Um eine Zehnerpotenz daneben – Umrechnung oder Vorsatz (k, m, µ …) prüfen"];
+    case "factor2": return ["bad", "Um den Faktor 2 daneben – fehlt irgendwo ein ½ oder eine 2?"];
+    default: return ["bad", "stimmt noch nicht"];
+  }
+}
+function showJudge(res, fresh) {
+  const ex = current();
+  ex.checks.forEach(cp => {
+    const j = res[cp.k]; if (!j) return;
+    const [cls, txt] = msgFor(cp, j);
+    const inp = $("cp-" + cp.k), m = $("cpm-" + cp.k);
+    if (!inp) return;
+    inp.className = cls; m.className = "cp-msg " + cls; m.textContent = txt;
+  });
+  if (fresh) renderResult();
+}
+function checkNow() {
+  const ex = current(); if (!ex) return;
+  const pr = prog(ex.id), p = paramsOf(ex);
+  const res = {};
+  ex.checks.forEach(cp => { res[cp.k] = judge(cp, p, pr.inputs[cp.k] || ""); });
+  const filled = ex.checks.filter(cp => res[cp.k].st !== "empty").length;
+  if (!filled) { setCheckStatus("Tragen Sie zuerst mindestens ein Ergebnis ein.", "warn"); return; }
+  pr.attempts += 1;
+  const okN = ex.checks.filter(cp => res[cp.k].st === "ok").length, all = okN === ex.checks.length;
+  S.lastJudge = { id: ex.id, res };
+  if (all && !pr.solved) {
+    pr.solved = true; pr.clean = pr.attempts <= 2 && pr.hints <= 1 && !pr.peeked;
+    adapt(ex, pr.clean ? "clean" : "solved");
+  } else if (!all && pr.attempts >= 4 && pr.attempts % 2 === 0) adapt(ex, "struggle");
+  save();
+  showJudge(res, true);
+  const msg = all ? `✓ Alle ${okN} Ergebnisse stimmen` : `${okN} von ${ex.checks.length} Ergebnissen stimmen`;
+  setCheckStatus(msg, all ? "ok" : "bad"); announce(msg);
+  renderChapters(); renderHeader(); Tutor.renderChrome();
+}
+$("check-btn").onclick = checkNow;
+
+function renderResult() {
+  const ex = current(), panel = $("result-panel");
+  if (!ex || !S.lastJudge || S.lastJudge.id !== ex.id) { panel.hidden = true; return; }
+  const pr = prog(ex.id), p = paramsOf(ex), res = S.lastJudge.res;
+  const all = ex.checks.every(cp => res[cp.k].st === "ok");
+  const unlocked = pr.solved || pr.attempts >= 2 || pr.hints >= 3;
+  let html = `<div class="verdict ${all ? "ok" : "bad"}"><strong>${all ? "Gelöst!" : "Noch nicht ganz"}</strong>${all ? " Alle Kontrollpunkte stimmen." : " Prüfen Sie die markierten Ergebnisse – oder lassen Sie den KI-Tutor Ihren Rechenweg ansehen."}</div>`;
+  if (adaptMsg) html += `<div class="notes"><div class="note">${esc(adaptMsg)}</div></div>`;
+  if (all) html += `<div style="padding:0 16px 16px"><button type="button" class="btn dark" id="res-next">Nächste Aufgabe →</button></div>`;
+  if (unlocked) {
+    const vals = ex.checks.map(cp => `- $${cp.sym} = ${tx(inUnit(cp.v(p), cp.q, cp.unit), 4)}${cp.unit ? "\\,\\mathrm{" + cp.unit.replace("°", "{}^\\circ ").replace("µ", "\\mu ").replace("%", "\\%") + "}" : ""}$`).join("\n");
+    html += `<details class="solution" id="sol-details"><summary>Musterlösung anzeigen</summary>${pr.solved ? "" : `<p style="margin:0;padding:0 12px 8px;color:var(--muted);font-size:13px">Wer die Lösung ansieht, bekommt die nächste Aufgabe eine Stufe leichter.</p>`}<div class="sol-body" style="padding:0 14px 12px">${md(ex.solution(p))}<p><strong>Ergebnisse:</strong></p>${md(vals)}</div></details>`;
+  } else html += `<p style="margin:0;padding:0 16px 14px;color:var(--muted);font-size:13px">Die Musterlösung erscheint nach zwei Prüfversuchen oder nach dem dritten Tipp des KI-Tutors.</p>`;
+  panel.innerHTML = html; panel.hidden = false;
+  const nb = $("res-next"); if (nb) nb.onclick = goNext;
+  const sd = $("sol-details");
+  if (sd) sd.addEventListener("toggle", () => { if (sd.open && !pr.solved && !pr.peeked) { pr.peeked = true; adapt(ex, "peek"); save(); renderChapters(); } });
+}
+
+function openTask(id, expand = true) {
+  const ex = byId(id); if (!ex) return;
+  S.currentId = id; S.lastJudge = null; adaptMsg = "";
+  if (expand) S.expanded.add(ex.ch);
+  save(); Tutor.reset(); Pad.load(id); Uploads.render();
+  renderAll();
+}
+function goNext() {
+  const n = pickNext(S.currentId);
+  if (n) { openTask(n.id); window.scrollTo({ top: 0 }); $("task-panel").focus({ preventScroll: true }); }
+  else { S.currentId = null; S.lastJudge = null; save(); renderAll(); }
+}
+$("next-btn").onclick = goNext; $("mbar-next").onclick = goNext;
+
+let numbersConfirm = false;
+$("new-numbers").onclick = () => {
+  const ex = current(); if (!ex) return;
+  if (!numbersConfirm) { numbersConfirm = true; $("new-numbers").textContent = "Wirklich? Ergebnisse und Schreibfeld werden geleert"; setTimeout(() => { numbersConfirm = false; $("new-numbers").textContent = "Neue Zahlen"; }, 4000); return; }
+  numbersConfirm = false; $("new-numbers").textContent = "Neue Zahlen";
+  const pr = prog(ex.id); pr.seed = newSeed(); pr.inputs = {};
+  S.lastJudge = null; save(); Pad.clearAll(); Uploads.clear(); Tutor.reset(); renderAll();
+  announce("Neue Zahlen erzeugt.");
+};
+
+$("chapters").addEventListener("change", e => {
+  const ch = e.target.dataset.ch; if (!ch) return;
+  e.target.checked ? S.selected.add(ch) : S.selected.delete(ch);
+  save();
+  if (!current() || !S.selected.has(current().ch)) { const n = pickNext(); n ? openTask(n.id, false) : renderAll(); } else renderChapters();
+});
+$("chapters").addEventListener("click", e => {
+  const o = e.target.closest("[data-open]");
+  if (o) { const ch = o.dataset.open; S.expanded.has(ch) ? S.expanded.delete(ch) : S.expanded.add(ch); save(); renderChapters(); const again = document.querySelector(`[data-open="${ch}"]`); if (again) again.focus(); return; }
+  const b = e.target.closest("[data-ex]");
+  if (b) { openTask(b.dataset.ex); if (document.body.classList.contains("nav-open")) closeNav(true); }
+});
+$("toggle-all").onclick = () => {
+  if (S.selected.size === CH_ORDER.length) S.selected.clear(); else CH_ORDER.forEach(c => S.selected.add(c));
+  save();
+  if (!current() || !S.selected.has(current().ch)) { const n = pickNext(); n ? openTask(n.id, false) : renderAll(); } else renderChapters();
+};
+$("mode-seg").addEventListener("click", e => {
+  const b = e.target.closest("[data-mode]"); if (!b) return;
+  S.mode = b.dataset.mode === "auto" ? "auto" : Number(b.dataset.mode); save();
+  const ex = current();
+  if (!ex || ex.lvl !== targetLevel(ex.ch)) { const n = pickNext(); if (n && (!ex || n.id !== ex.id)) { openTask(n.id); return; } }
+  renderLevel(); renderChapters();
+});
+
+/* ---- Handy: Aufgabenliste als Schublade */
+const mqMobile = window.matchMedia("(max-width: 860px)");
+function openNav() {
+  if (!mqMobile.matches) return;
+  document.body.classList.add("nav-open"); $("nav-toggle").setAttribute("aria-expanded", "true");
+  ["task-panel", "work-panel", "check-panel", "result-panel", "tutor", "welcome"].forEach(id => { $(id).inert = true; });
+  document.querySelector(".titleblock").inert = true; $("mbar").inert = true;
+  setTimeout(() => $("nav-close").focus(), 60);
+}
+function closeNav(toTask) {
+  if (!document.body.classList.contains("nav-open")) return;
+  document.body.classList.remove("nav-open"); $("nav-toggle").setAttribute("aria-expanded", "false");
+  ["task-panel", "work-panel", "check-panel", "result-panel", "tutor", "welcome"].forEach(id => { $(id).inert = false; });
+  document.querySelector(".titleblock").inert = false; $("mbar").inert = false;
+  if (toTask) { window.scrollTo({ top: 0 }); $("task-panel").focus({ preventScroll: true }); } else $("nav-toggle").focus();
+}
+$("nav-toggle").onclick = () => document.body.classList.contains("nav-open") ? closeNav() : openNav();
+$("nav-close").onclick = () => closeNav();
+$("nav-backdrop").onclick = () => closeNav();
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("nav-open")) { e.preventDefault(); closeNav(); } });
+mqMobile.addEventListener?.("change", () => { if (!mqMobile.matches) closeNav(); });
+
+/* ====================================================================== Schreibfeld */
+const PW = 1000, PH = 750;   // logische Seitengröße (4:3)
+const Pad = {
+  id: null, pages: [{ strokes: [] }], page: 0, color: "#17242c", eraser: false, undo: [], drawing: null, penSeen: false,
+  cv: $("pad-canvas"),
+  load(id) {
+    this.id = id; this.undo = [];
+    const d = store.get("draw." + id, null);
+    this.pages = d && Array.isArray(d.pages) && d.pages.length ? d.pages : [{ strokes: [] }];
+    this.page = Math.min(d?.page || 0, this.pages.length - 1);
+    this.resize(); this.renderTools();
+  },
+  persist() { clearTimeout(this._t); this._t = setTimeout(() => store.set("draw." + this.id, { pages: this.pages, page: this.page }), 250); },
+  clearAll() { this.pages = [{ strokes: [] }]; this.page = 0; this.undo = []; store.set("draw." + this.id, null); this.redraw(); this.renderTools(); },
+  resize() {
+    const r = this.cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    this.cv.width = Math.round(r.width * dpr); this.cv.height = Math.round(r.width * 0.75 * dpr);
+    this.redraw();
+  },
+  strokesOf() { return this.pages[this.page].strokes; },
+  drawStroke(ctx, s, k) {
+    const pts = s.p; if (!pts.length) return;
+    ctx.strokeStyle = s.c; ctx.fillStyle = s.c; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    if (pts.length === 1) { ctx.beginPath(); ctx.arc(pts[0][0] * k, pts[0][1] * k, 1.6 * k * (s.w || 1), 0, Math.PI * 2); ctx.fill(); return; }
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      ctx.lineWidth = Math.max(0.8, (s.w || 1) * 2.6 * k * (0.55 + 0.9 * ((a[2] + b[2]) / 2)));
+      ctx.beginPath(); ctx.moveTo(a[0] * k, a[1] * k); ctx.lineTo(b[0] * k, b[1] * k); ctx.stroke();
+    }
+  },
+  redraw() {
+    const ctx = this.cv.getContext("2d"), k = this.cv.width / PW;
+    ctx.clearRect(0, 0, this.cv.width, this.cv.height);
+    for (const s of this.strokesOf()) this.drawStroke(ctx, s, k);
+    $("pad-hint").hidden = this.pages.some(pg => pg.strokes.length) || Uploads.list().length > 0;
+  },
+  renderTools() {
+    $("page-info").textContent = `Seite ${this.page + 1}/${this.pages.length}`;
+    $("page-prev").disabled = this.page === 0; $("page-next").disabled = this.page >= this.pages.length - 1;
+    $("undo").disabled = !this.undo.length;
+    document.querySelectorAll("[data-pen]").forEach(b => b.setAttribute("aria-pressed", String(!this.eraser && b.dataset.pen === this.color)));
+    $("eraser").setAttribute("aria-pressed", String(this.eraser));
+    workCount();
+  },
+  pos(e) { const r = this.cv.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / r.width * PW * 10) / 10, Math.round((e.clientY - r.top) / r.height * PH * 10) / 10, e.pressure && e.pointerType === "pen" ? Math.round(e.pressure * 100) / 100 : 0.5]; },
+  allowed(e) { if (e.pointerType === "pen") { this.penSeen = true; return true; } return e.pointerType === "mouse" || !this.penSeen; },
+  snapshot() { this.undo.push(JSON.stringify(this.strokesOf())); if (this.undo.length > 40) this.undo.shift(); },
+  eraseAt(pt) {
+    const st = this.strokesOf(), keep = st.filter(s => !s.p.some(q => Math.hypot(q[0] - pt[0], q[1] - pt[1]) < 14));
+    if (keep.length !== st.length) { this.pages[this.page].strokes = keep; this.redraw(); }
+  },
+  async pageBlob(i) {
+    const c = document.createElement("canvas"); c.width = 1200; c.height = 900;
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+    for (const s of this.pages[i].strokes) this.drawStroke(ctx, { ...s, c: s.c }, c.width / PW);
+    return new Promise(res => c.toBlob(res, "image/png"));
+  },
+  usedPages() { return this.pages.map((pg, i) => pg.strokes.length ? i : -1).filter(i => i >= 0); },
+};
+Pad.cv.addEventListener("pointerdown", e => {
+  if (!Pad.allowed(e) || (e.button !== undefined && e.button > 0)) return;
+  e.preventDefault(); try { Pad.cv.setPointerCapture(e.pointerId); } catch (err) {}
+  Pad.snapshot();
+  const pt = Pad.pos(e);
+  if (Pad.eraser) { Pad.drawing = { erase: true }; Pad.eraseAt(pt); return; }
+  Pad.drawing = { c: Pad.color, w: 1, p: [pt] };
+  Pad.strokesOf().push(Pad.drawing); Pad.redraw();
+});
+Pad.cv.addEventListener("pointermove", e => {
+  if (!Pad.drawing) return;
+  e.preventDefault();
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  if (Pad.drawing.erase) { evs.forEach(ev => Pad.eraseAt(Pad.pos(ev))); return; }
+  const ctx = Pad.cv.getContext("2d"), k = Pad.cv.width / PW;
+  for (const ev of evs) {
+    const pt = Pad.pos(ev), last = Pad.drawing.p[Pad.drawing.p.length - 1];
+    if (Math.hypot(pt[0] - last[0], pt[1] - last[1]) < 0.8) continue;
+    Pad.drawing.p.push(pt);
+    Pad.drawStroke(ctx, { c: Pad.drawing.c, w: 1, p: [last, pt] }, k);
+  }
+});
+const endStroke = () => { if (!Pad.drawing) return; Pad.drawing = null; Pad.persist(); Pad.redraw(); Pad.renderTools(); };
+Pad.cv.addEventListener("pointerup", endStroke); Pad.cv.addEventListener("pointercancel", endStroke); Pad.cv.addEventListener("lostpointercapture", endStroke);
+document.querySelectorAll("[data-pen]").forEach(b => b.onclick = () => { Pad.color = b.dataset.pen; Pad.eraser = false; Pad.renderTools(); });
+$("eraser").onclick = () => { Pad.eraser = !Pad.eraser; Pad.renderTools(); };
+$("undo").onclick = () => { const s = Pad.undo.pop(); if (s !== undefined) { Pad.pages[Pad.page].strokes = JSON.parse(s); Pad.persist(); Pad.redraw(); Pad.renderTools(); } };
+$("page-prev").onclick = () => { if (Pad.page > 0) { Pad.page--; Pad.undo = []; Pad.persist(); Pad.redraw(); Pad.renderTools(); } };
+$("page-next").onclick = () => { if (Pad.page < Pad.pages.length - 1) { Pad.page++; Pad.undo = []; Pad.persist(); Pad.redraw(); Pad.renderTools(); } };
+$("page-add").onclick = () => { Pad.pages.push({ strokes: [] }); Pad.page = Pad.pages.length - 1; Pad.undo = []; Pad.persist(); Pad.redraw(); Pad.renderTools(); };
+$("page-clear").onclick = () => { if (!Pad.strokesOf().length) return; Pad.snapshot(); Pad.pages[Pad.page].strokes = []; Pad.persist(); Pad.redraw(); Pad.renderTools(); };
+new ResizeObserver(() => Pad.resize()).observe($("pad"));
+
+/* ---- Fotos und hochgeladene Bilder (nur im Arbeitsspeicher, je Aufgabe) */
+const Uploads = {
+  byTask: {},
+  list() { return this.byTask[S.currentId] || []; },
+  add(files) {
+    const arr = (this.byTask[S.currentId] ||= []);
+    for (const f of files) if (f && /^image\//.test(f.type)) arr.push({ blob: f, url: URL.createObjectURL(f), name: f.name || "Foto" });
+    this.render(); Pad.redraw();
+  },
+  remove(i) { const arr = this.list(); const [x] = arr.splice(i, 1); if (x) URL.revokeObjectURL(x.url); this.render(); Pad.redraw(); },
+  clear() { this.list().forEach(x => URL.revokeObjectURL(x.url)); this.byTask[S.currentId] = []; this.render(); },
+  render() {
+    $("uploads").innerHTML = this.list().map((x, i) => `<div class="thumb"><img src="${x.url}" alt="Bild ${i + 1} Ihres Rechenwegs"><button type="button" data-rm="${i}" aria-label="Bild ${i + 1} entfernen">✕</button></div>`).join("");
+    workCount();
+  },
+};
+$("uploads").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (b) Uploads.remove(+b.dataset.rm); });
+["photo-in", "upload-in"].forEach(id => $(id).addEventListener("change", e => { Uploads.add([...e.target.files]); e.target.value = ""; }));
+function workCount() {
+  const n = Pad.usedPages().length + Uploads.list().length;
+  $("work-count").textContent = n ? `${n} ${n === 1 ? "Seite" : "Seiten"} für den Tutor` : "";
+  Tutor.renderChrome?.();
+}
+async function workImages(max) {
+  const blobs = [];
+  for (const i of Pad.usedPages()) blobs.push(await Pad.pageBlob(i));
+  for (const x of Uploads.list()) blobs.push(x.blob);
+  return { blobs: blobs.slice(-max), total: blobs.length };
+}
+
+/* ====================================================================== KI-Tutor */
+const Tutor = {
+  sample: undefined, maxImages: 0, turns: [], busy: false, ctl: null, off: "",
+  async init() {
+    try { this.sample = await window.claude?.use?.("sample"); } catch (e) { this.sample = null; }
+    if (!this.sample) this.sample = null;
+    if (this.sample) { try { const l = await this.sample.limits(); this.maxImages = l && l.images ? (l.images.maxCount || 1) : 0; } catch (e) { this.maxImages = 0; } }
+    this.renderChrome(); this.renderChat();
+  },
+  available() { return !!this.sample && !this.off; },
+  reset() { this.stop(); this.turns = []; this.renderChat(); this.renderChrome(); },
+  stop() { if (this.ctl) { this.ctl.abort(); this.ctl = null; } },
+  hintLevel() { const ex = current(); return ex ? prog(ex.id).hints : 0; },
+  renderChrome() {
+    const on = this.available() && !!current();
+    const n = Pad.usedPages().length + Uploads.list().length;
+    $("ai-review").disabled = !on || this.busy || !n || !this.maxImages;
+    $("ai-review").title = !n ? "Erst im Schreibfeld rechnen oder ein Foto hinzufügen" : "";
+    $("ai-hint").disabled = !on || this.busy;
+    $("chat-form").querySelector("button").disabled = !on || this.busy;
+    $("chat-input").disabled = !on;
+    $("stop-btn").hidden = !this.busy;
+    const h = this.hintLevel();
+    $("hintmeter").innerHTML = [0, 1, 2].map(i => `<i class="${i < h ? "on" : ""}"></i>`).join("");
+  },
+  renderChat(stream) {
+    const chat = $("chat");
+    if (this.sample === undefined) { chat.innerHTML = ""; return; }
+    if (!this.sample) {
+      chat.innerHTML = typeof window.claude === "undefined"
+        ? `<div class="ai-off">Den KI-Tutor gibt es in der <strong>Claude-Version</strong> des PhysicsTrainers: Dort liest er Ihren Rechenweg aus dem Schreibfeld oder vom Foto. Sie brauchen dafür ein (kostenloses) Claude-Konto. Alle Aufgaben, Kontrollpunkte und das Schreibfeld funktionieren auch hier.<p style="margin-top:10px"><a class="btn primary" style="text-decoration:none" href="${CLAUDE_URL}" target="_top">Zur Claude-Version</a></p></div>`
+        : `<div class="ai-off">In dieser geteilten Ansicht lässt claude.ai den KI-Tutor nicht zu – er funktioniert nur in Ihrer eigenen Kopie („Kopieren“ in der Leiste ganz oben, links beim Titel). Alle Aufgaben, Kontrollpunkte und das Schreibfeld funktionieren auch hier.</div>`;
+      return;
+    }
+    if (this.off) { chat.innerHTML = `<div class="ai-off">${esc(this.off)}</div>`; return; }
+    let html = `<div class="msg ai"><div class="who">KI-Tutor</div><div class="md">${md("Ich kenne die Aufgabe mit Ihren Zahlen und Ihre eingetragenen Ergebnisse. Lassen Sie mich Ihren **Rechenweg prüfen** – aus dem Schreibfeld oder als Foto. Ich verrate keine fertige Lösung, sondern zeige Ihnen, wo es hakt, und verweise auf das Skript.")}</div></div>`;
+    if (!this.turns.length) html += `<div class="msg sys">Bei Ihrer ersten Anfrage fragt Claude einmal, ob diese Seite Ihr Claude-Konto nutzen darf${this.maxImages ? " und Bilder senden darf" : ""} – bitte erlauben Sie das.</div>`;
+    for (const t of this.turns) {
+      if (t.role === "user") html += `<div class="msg user">${esc(t.shown)}${t.images ? ` <span class="eyebrow">· ${t.images} ${t.images === 1 ? "Bild" : "Bilder"}</span>` : ""}</div>`;
+      else if (t.role === "assistant") html += `<div class="msg ai"><div class="who">KI-Tutor</div><div class="md">${md(t.content)}</div></div>`;
+      else html += `<div class="msg sys">${esc(t.content)}</div>`;
+    }
+    if (stream !== undefined) html += `<div class="msg ai"><div class="who">KI-Tutor</div><div class="md">${stream ? md(stream) : `<span class="thinking"><span class="spin" aria-hidden="true"></span> Der Tutor sieht sich das an …<span id="think-secs"></span> <button type="button" class="btn ghost" data-stop style="padding:0 6px;font-size:12px">Abbrechen</button></span>`}</div></div>`;
+    chat.innerHTML = html; chat.scrollTop = chat.scrollHeight;
+  },
+  context() {
+    const ex = current(), p = paramsOf(ex), pr = prog(ex.id);
+    const res = S.lastJudge && S.lastJudge.id === ex.id ? S.lastJudge.res : null;
+    const cps = ex.checks.map(cp => {
+      const inp = pr.inputs[cp.k] || "";
+      const st = res && res[cp.k] ? res[cp.k].st : (inp ? "noch nicht geprüft" : "leer");
+      return `- ${cp.name} (${cp.sym}): Eingabe „${inp || "–"}“ → ${st === "ok" ? "richtig" : st === "leer" || st === "noch nicht geprüft" ? st : "falsch (" + st + ")"}; Sollwert ${plain(inUnit(cp.v(p), cp.q, cp.unit), 4)} ${cp.unit}`;
+    }).join("\n");
+    const secs = Object.values(SEC).map(s => `[[${s.id}]] ${s.title}`).join("\n");
+    return [
+      "Du bist der KI-Tutor im PhysicsTrainer zur Vorlesung „Physik für Ingenieurinnen und Ingenieure“ (Hochschule Trier). Die Studierenden sind im 1./2. Semester.",
+      "REGELN:",
+      "1. Antworte auf Deutsch, freundlich, direkt und knapp (meist unter 150 Wörtern). Sieze die Studierenden.",
+      "2. Verrate keine vollständige Lösung und rechne die Aufgabe nicht komplett vor. Nenne keine Sollwerte von Ergebnissen, die die Studierenden noch nicht richtig haben. Höchstens ein einzelner Rechenschritt als Beispiel.",
+      "3. Liegen Bilder bei, zeigen sie den handschriftlichen Rechenweg. Gehe ihn Schritt für Schritt durch: Bestätige richtige Schritte kurz, benenne den ERSTEN fehlerhaften Schritt genau (Ansatz, Formel, Vorzeichen, Einheit, Umrechnung oder Rechenfehler) und sage, worauf die Person achten soll. Ist etwas unleserlich, sage das und rate nicht.",
+      "4. Achte besonders auf SI-Umrechnungen, Vorzeichen, Grad/Bogenmaß sowie absolute Temperaturen und Drücke.",
+      "5. Verweise auf passende Abschnitte im Skript mit der ID in doppelten eckigen Klammern, z.B. [[1.2]] – mindestens einmal pro Antwort, nur aus diesem Verzeichnis:\n" + secs,
+      "6. Format: einfaches Markdown, kurze Listen, Formeln in LaTeX zwischen $…$. Keine Überschriften.",
+      "",
+      `AUFGABE (Kapitel ${ex.ch} ${chTitle(ex.ch)}, Stufe ${ex.lvl} ${LEVELS[ex.lvl]}): ${ex.title}`,
+      ex.text(p),
+      "",
+      "KONTROLLPUNKTE (Eingaben der Person und automatische Prüfung; die Sollwerte sind nur für dich):",
+      cps,
+      "",
+      "MUSTERLÖSUNG (nur als Referenz für dich – niemals zeigen oder vollständig wiedergeben):",
+      ex.solution(p),
+    ].join("\n");
+  },
+  async ask(kind, text) {
+    if (!this.available() || this.busy) return;
+    const ex = current(); if (!ex) return;
+    const pr = prog(ex.id);
+    this.busy = true; this.renderChrome();   // sofort sperren: das Erzeugen der Bilder dauert einen Moment
+    let request, shown, wantImages = false;
+    if (kind === "review") { request = "Bitte prüfe meinen Rechenweg in den Bildern."; shown = "Rechenweg prüfen"; wantImages = true; }
+    else if (kind === "hint") {
+      const lvl = Math.min(3, pr.hints + 1); pr.hints = lvl; save();
+      request = ["", "Gib mir einen ersten Denkanstoß (Tipp 1 von 3): Welches physikalische Prinzip oder welcher Ansatz passt? Noch keine Formel mit Zahlen.",
+        "Tipp 2 von 3: Nenne die entscheidende Gleichung und wie ich sie aufstelle, aber setze keine Zahlen ein.",
+        "Tipp 3 von 3: Zeige mir den Lösungsweg als Gerüst mit Lücken (___) für Zahlenwerte und Ergebnisse. Geh dabei von meinem bisherigen Rechenweg aus, falls Bilder beiliegen."][lvl];
+      shown = `Tipp ${lvl} von 3`; wantImages = true;
+    } else { request = text; shown = text; }
+    let images = [];
+    if (wantImages && this.maxImages) { const w = await workImages(this.maxImages); images = w.blobs; if (w.total > images.length) this.turns.push({ role: "sys", content: `Es werden nur die letzten ${images.length} von ${w.total} Seiten mitgeschickt.` }); }
+    if (kind === "review" && !images.length) { this.busy = false; this.renderChrome(); return; }
+    this.turns.push({ role: "user", shown, content: request + (images.length ? `\n(${images.length} ${images.length === 1 ? "Bild" : "Bilder"} mit meinem Rechenweg anbei.)` : ""), images: images.length });
+    await this.send(images);
+    if (kind === "hint" && pr.hints >= 3 && S.lastJudge && S.lastJudge.id === ex.id) renderResult();
+  },
+  async send(images) {
+    this.busy = true; this.ctl = new AbortController(); this.renderChrome(); this.renderChat("");
+    const stopTick = ticker(s => { const el = document.getElementById("think-secs"); if (el && s >= 3) el.textContent = ` · ${fmtSecs(s)} – Antworten mit Bildern dauern oft 10 bis 60 Sekunden.`; });
+    const msgs = [{ role: "user", content: this.context() }];
+    this.turns.filter(t => t.role === "user" || t.role === "assistant").slice(-7).forEach(t => msgs.push({ role: t.role, content: t.content }));
+    const opts = { signal: this.ctl.signal, cache: false, onText: ({ text }) => this.renderChat(text) };
+    if (images.length) opts.images = images;
+    try {
+      const { text } = await this.sample(msgs, opts);
+      this.turns.push({ role: "assistant", content: text });
+    } catch (e) {
+      const code = e && e.code;
+      if (e && e.text) this.turns.push({ role: "assistant", content: e.text });
+      if (code === "images_unavailable" || code === "image_rejected") this.turns.push({ role: "sys", content: "Die Bilder konnten nicht gesendet werden. Stellen Sie Ihre Frage gern ohne Bild oder versuchen Sie ein anderes Foto." });
+      else if (code === "rate_limited") this.turns.push({ role: "sys", content: "Gerade zu viele Anfragen – oder Ihr Claude-Kontingent ist für den Moment aufgebraucht. Bitte später noch einmal versuchen." });
+      else if (code === "not_granted") this.off = "Sie haben dem KI-Tutor nicht erlaubt, Ihr Claude-Konto zu nutzen. Das können Sie in den Berechtigungen dieses Artefakts ändern.";
+      else if (code === "sampling_disabled") this.off = "Ihr Claude-Konto lässt KI-Anfragen aus Artefakten nicht zu. Mit einem privaten (kostenlosen) Claude-Konto funktioniert der Tutor.";
+      else if (code === "refused") this.turns.push({ role: "sys", content: "Auf diese Anfrage gibt es keine Antwort. Bitte formulieren Sie sie anders." });
+      else if (code !== "cancelled") this.turns.push({ role: "sys", content: "Die Antwort konnte nicht geladen werden. Bitte erneut versuchen." });
+      const lastUser = this.turns.map(t => t.role).lastIndexOf("user");
+      if (!(e && e.text) && lastUser >= 0) this.turns[lastUser] = { role: "sys", content: "↳ " + this.turns[lastUser].shown };
+    } finally {
+      stopTick(); this.busy = false; this.ctl = null; this.renderChat(); this.renderChrome();
+      const last = [...this.turns].reverse().find(t => t.role === "assistant" || t.role === "sys");
+      if (last) announce(last.role === "assistant" ? "Tutor: " + last.content.slice(0, 300) : last.content);
+    }
+  },
+};
+$("ai-review").onclick = () => Tutor.ask("review");
+$("ai-hint").onclick = () => { Tutor.ask("hint"); };
+$("stop-btn").onclick = () => Tutor.stop();
+$("chat").addEventListener("click", e => { if (e.target.closest("[data-stop]")) Tutor.stop(); });
+$("chat-form").addEventListener("submit", e => { e.preventDefault(); const v = $("chat-input").value.trim(); if (!v) return; $("chat-input").value = ""; Tutor.ask("chat", v); });
+$("chat-input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("chat-form").requestSubmit(); } });
+
+/* ====================================================================== Skript, Info, Willkommen */
+function renderSkript() {
+  $("skript-h").textContent = "Skript: " + SKRIPT_TITLE;
+  $("skript-nav").innerHTML = SKRIPT.map(c => `<b>${c.ch} ${esc(c.title)}</b>${c.sections.map(s => `<a href="#sec-${s.id}" data-goto="${s.id}">${s.id} ${esc(s.title)}</a>`).join("")}`).join("");
+  $("skript-body").innerHTML = `<p class="chap-eyebrow">Hochschule Trier · Version 1.0</p><h2 style="margin-top:6px">${esc(SKRIPT_TITLE)}</h2>` + SKRIPT.map(c => `<p class="chap-eyebrow">Kapitel ${c.ch}</p><h2 id="chap-${c.ch}" style="margin-top:4px">${esc(c.title)}</h2>${c.sections.map(s => `<h3 id="sec-${s.id}">${s.id} ${esc(s.title)}</h3>${md(s.text)}`).join("")}`).join("");
+  renderSkript.done = true;
+}
+function openSkript(id) {
+  if (!renderSkript.done) renderSkript();
+  const d = $("skript-dlg"); if (!d.open) d.showModal();
+  const body = $("skript-body");
+  if (id && SEC[id]) {
+    const h = document.getElementById("sec-" + id);
+    body.scrollTop = h.offsetTop - 8;
+    h.classList.remove("flash"); void h.offsetWidth; h.classList.add("flash");
+    document.querySelectorAll("#skript-nav a").forEach(a => a.classList.toggle("cur", a.dataset.goto === id));
+  } else body.scrollTop = 0;
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-sec]");
+  if (a) { e.preventDefault(); openSkript(a.dataset.sec); return; }
+  const g = e.target.closest("[data-goto]");
+  if (g) { e.preventDefault(); openSkript(g.dataset.goto); }
+});
+$("skript-close").onclick = () => $("skript-dlg").close();
+$("info-btn").onclick = () => {
+  $("info-body").innerHTML = md(String.raw`Der PhysicsTrainer enthält ${TASKS.length} Übungsaufgaben zu den ${SKRIPT.length} Kapiteln des Skripts „${SKRIPT_TITLE}“, je Kapitel in drei Schwierigkeitsstufen.
+
+- **Eigene Zahlen:** Jede Aufgabe erzeugt für Sie eigene Werte. Mit „Neue Zahlen“ üben Sie dieselbe Aufgabe noch einmal.
+- **Rechenweg:** Rechnen Sie im Schreibfeld (Tablet mit Stift, auch mit Finger oder Maus) oder auf Papier und fügen Sie ein Foto hinzu. Auf dem Tablet zeichnet nur der Stift, sobald er einmal benutzt wurde – die Hand darf aufliegen.
+- **Kontrollpunkte:** Zwischen- und Endergebnisse tragen Sie mit Einheit ein. Der Trainer prüft sie mit 1 % Toleranz, rechnet Einheiten selbst um und erkennt typische Fehler (Vorzeichen, Zehnerpotenz, Faktor 2).
+- **KI-Tutor:** prüft Ihren handschriftlichen Rechenweg, gibt drei gestufte Tipps und verweist auf das Skript, ohne die Lösung zu verraten. Er nutzt Ihr eigenes Claude-Konto; Bilder sieht er nur, wenn Sie „Rechenweg prüfen“ oder „Tipp“ wählen.
+- **Stufen:** Zwei saubere Lösungen in Folge (höchstens zwei Prüfversuche, höchstens ein Tipp) heben die Stufe im Kapitel; wer die Musterlösung ansieht, bekommt leichtere Aufgaben.
+- Ihr Fortschritt und das Schreibfeld werden nur in diesem Browser gespeichert.
+
+PhysicsTrainer v${VERSION} · Vorführprototyp auf Basis des CodingTrainers · Skript und Aufgaben sind Beispielinhalte.`);
+  $("info-dlg").showModal();
+};
+$("info-close").onclick = () => $("info-dlg").close();
+function renderWelcome() {
+  const w = $("welcome");
+  if (S.welcomed) { w.hidden = true; return; }
+  w.hidden = false;
+  const steps = [
+    "Lesen Sie die Aufgabe – die Zahlen sind nur für Sie erzeugt. Die Verweise unter „Im Skript“ führen zum passenden Abschnitt.",
+    "Rechnen Sie im **Schreibfeld** (Tablet mit Stift) – oder auf Papier und fügen Sie ein **Foto** hinzu.",
+    "Tragen Sie Zwischen- und Endergebnisse **mit Einheit** ein und klicken Sie auf **Prüfen**.",
+    "Hängen Sie fest? Der **KI-Tutor** prüft Ihren Rechenweg und gibt Tipps, ohne die Lösung zu verraten.",
+  ];
+  w.innerHTML = `<h2>So funktioniert der PhysicsTrainer</h2><ol>${steps.map(s => `<li>${mdInline(s)}</li>`).join("")}</ol><p>Ihr Fortschritt und das Schreibfeld werden nur in diesem Browser gespeichert. Weitere Erklärungen unter „Info“ (oben rechts).</p><div class="row"><button type="button" class="btn dark" id="welcome-ok">Verstanden, los geht's</button></div>`;
+  $("welcome-ok").onclick = () => { S.welcomed = true; save(); w.hidden = true; $("task-panel").focus({ preventScroll: true }); };
+}
+
+/* ====================================================================== Start */
+function renderAll() {
+  renderHeader(); renderChapters(); renderLevel(); renderTask(); renderChecks(); renderResult(); renderWelcome();
+  Tutor.renderChrome(); Tutor.renderChat();
+}
+(function boot() {
+  document.body.classList.add("view-practice");
+  if (!current() || !S.selected.has(current().ch)) { const n = pickNext(); if (n) S.currentId = n.id; }
+  if (S.currentId) S.expanded.add(current().ch);
+  save();
+  Pad.load(S.currentId); Uploads.render();
+  renderAll();
+  Tutor.init();
+})();
+
+</script>
+</body>
+</html>

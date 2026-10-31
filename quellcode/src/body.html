@@ -1,0 +1,135 @@
+<a class="skip" href="#task-panel">Zur Aufgabe springen</a>
+<header class="titleblock">
+  <div class="tb-mark" aria-hidden="true">PT<span id="tb-version"></span></div>
+  <div class="tb-name">
+    <h1>PhysicsTrainer</h1>
+    <p id="subtitle"></p>
+  </div>
+  <div class="tb-tools">
+    <div class="tb-cell">
+      <span class="tb-label">Gelöst</span>
+      <span class="tb-value" id="solved-count">0 / 0</span>
+    </div>
+    <div class="tb-cell">
+      <span class="tb-label">Skript</span>
+      <button type="button" class="btn ghost" id="skript-btn" data-sec="">Öffnen</button>
+    </div>
+    <div class="tb-cell">
+      <button type="button" class="btn ghost" id="info-btn">Info</button>
+    </div>
+  </div>
+</header>
+
+<nav class="mbar" id="mbar" aria-label="Navigation">
+  <button type="button" class="btn" id="nav-toggle" aria-expanded="false" aria-controls="side"><span aria-hidden="true">☰</span> <span>Aufgaben &amp; Kapitel</span></button>
+  <span class="mbar-info" id="mbar-info"></span>
+  <button type="button" class="btn dark" id="mbar-next">Nächste →</button>
+</nav>
+<div class="backdrop" id="nav-backdrop"></div>
+<div class="sr" id="announce" aria-live="polite"></div>
+
+<div class="app">
+  <aside class="side" id="side" aria-label="Aufgaben, Kapitel und Einstellungen">
+    <div class="drawer-h"><strong>Aufgaben &amp; Kapitel</strong><button type="button" class="btn ghost" id="nav-close">Schließen</button></div>
+    <section class="panel" id="diff-panel">
+      <div class="panel-h"><h2 id="diff-h">Schwierigkeit</h2></div>
+      <div class="panel-b">
+        <div class="field">
+          <div class="seg" role="group" id="mode-seg" aria-labelledby="diff-h" style="width:100%;display:grid;grid-template-columns:2fr 1fr 1fr 1fr">
+            <button type="button" data-mode="auto">Automatisch</button>
+            <button type="button" data-mode="1">1</button>
+            <button type="button" data-mode="2">2</button>
+            <button type="button" data-mode="3">3</button>
+          </div>
+          <p class="levelnote" id="level-note"></p>
+        </div>
+        <div class="field">
+          <button type="button" class="btn dark" id="next-btn" style="justify-content:center">Nächste Aufgabe →</button>
+        </div>
+      </div>
+    </section>
+    <section class="panel" id="chap-panel">
+      <div class="panel-h"><h2>Kapitel</h2><button type="button" class="btn ghost" id="toggle-all" style="padding:2px 6px;font-size:12px"></button></div>
+      <ul class="chapters" id="chapters"></ul>
+      <p class="legend" id="legend"></p>
+    </section>
+  </aside>
+
+  <main class="main">
+    <section class="panel welcome" id="welcome" hidden></section>
+    <section class="panel" id="task-panel" tabindex="-1">
+      <div class="task-head">
+        <h2 id="task-title"></h2>
+        <span class="tag" id="task-tag"></span>
+      </div>
+      <div class="task-body" id="task-body"></div>
+      <div class="refs" id="task-refs"></div>
+      <div class="task-actions">
+        <button type="button" class="btn ghost" id="new-numbers">Neue Zahlen</button>
+        <span class="note-small" id="numbers-note">Jede Aufgabe hat Ihre eigenen Zahlen.</span>
+      </div>
+    </section>
+
+    <section class="panel" id="work-panel" aria-labelledby="work-h">
+      <div class="panel-h"><h2 id="work-h">Rechenweg</h2><span class="eyebrow" id="work-count"></span></div>
+      <div class="work-tools" role="toolbar" aria-label="Werkzeuge für das Schreibfeld">
+        <button type="button" class="tool" data-pen="#17242c" aria-pressed="true" title="Stift schwarz"><span class="swatch" style="background:#17242c"></span><span class="sr">Stift schwarz</span></button>
+        <button type="button" class="tool" data-pen="#2344c4" aria-pressed="false" title="Stift blau"><span class="swatch" style="background:#2344c4"></span><span class="sr">Stift blau</span></button>
+        <button type="button" class="tool" data-pen="#c0262d" aria-pressed="false" title="Stift rot"><span class="swatch" style="background:#c0262d"></span><span class="sr">Stift rot</span></button>
+        <button type="button" class="tool" id="eraser" aria-pressed="false" title="Radierer">⌫ <span>Radierer</span></button>
+        <button type="button" class="tool" id="undo" title="Rückgängig">↶ <span class="sr">Rückgängig</span></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="tool" id="page-prev" title="Vorige Seite">◀<span class="sr">Vorige Seite</span></button>
+        <span class="pageinfo" id="page-info" aria-live="polite"></span>
+        <button type="button" class="tool" id="page-next" title="Nächste Seite">▶<span class="sr">Nächste Seite</span></button>
+        <button type="button" class="tool" id="page-add" title="Neue Seite">+ <span>Seite</span></button>
+        <button type="button" class="tool" id="page-clear" title="Seite leeren">Leeren</button>
+        <span class="grow"></span>
+        <label class="tool" for="photo-in">📷 <span>Foto</span></label>
+        <input type="file" id="photo-in" class="sr-file" accept="image/*" capture="environment">
+        <label class="tool" for="upload-in">⬆ <span>Bild hochladen</span></label>
+        <input type="file" id="upload-in" class="sr-file" accept="image/*" multiple>
+      </div>
+      <div class="pad-wrap">
+        <div class="pad" id="pad"><canvas id="pad-canvas" aria-label="Schreibfeld für den Rechenweg"></canvas><div class="pad-hint" id="pad-hint">Hier mit Stift oder Finger rechnen –<br>oder oben ein Foto bzw. Bild Ihrer Rechnung hinzufügen.</div></div>
+      </div>
+      <div class="uploads" id="uploads"></div>
+      <p class="work-note">Das Schreibfeld wird in diesem Browser gespeichert, Fotos und hochgeladene Bilder nicht. Den Rechenweg sieht nur der KI-Tutor, wenn Sie ihn prüfen lassen.</p>
+    </section>
+
+    <section class="panel" id="check-panel" aria-labelledby="check-h">
+      <div class="panel-h"><h2 id="check-h">Ergebnisse</h2></div>
+      <div class="checks" id="checks"></div>
+      <p class="unit-help">Mit Einheit eingeben, z.B. <code>12,5 m/s</code>, <code>3,2·10^-6 s</code>, <code>40 %</code> oder <code>0,98 c</code>. Andere passende Einheiten (km/h, kN, bar …) rechnet der Trainer selbst um.</p>
+      <div class="checks-bar">
+        <button type="button" class="btn primary" id="check-btn">Prüfen</button>
+        <span class="check-status" id="check-status"></span>
+        <span class="grow"></span>
+      </div>
+    </section>
+
+    <section class="panel" id="result-panel" hidden></section>
+  </main>
+
+  <aside class="panel tutor" id="tutor" aria-labelledby="tutor-h">
+    <div class="panel-h"><h2 id="tutor-h">KI-Tutor</h2><button type="button" class="btn ghost" id="stop-btn" hidden style="padding:2px 8px;font-size:12px">Stopp</button></div>
+    <div class="tutor-actions" id="tutor-actions">
+      <button type="button" class="btn" id="ai-review">Rechenweg prüfen</button>
+      <button type="button" class="btn" id="ai-hint"><span>Tipp</span><span class="hintmeter" id="hintmeter"><i></i><i></i><i></i></span></button>
+    </div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <form class="chat-form" id="chat-form">
+      <textarea id="chat-input" rows="1" aria-labelledby="tutor-h" placeholder="Frage zur Aufgabe oder zum Skript …"></textarea>
+      <button type="submit" class="btn dark">Fragen</button>
+    </form>
+  </aside>
+</div>
+
+<dialog id="info-dlg" aria-labelledby="info-h">
+  <div class="panel-h"><h2 id="info-h">Info</h2><button type="button" class="btn ghost" id="info-close"><span aria-hidden="true">✕</span><span class="sr">Schließen</span></button></div>
+  <div class="panel-b" id="info-body"></div>
+</dialog>
+<dialog id="skript-dlg" aria-labelledby="skript-h">
+  <div class="panel-h"><h2 id="skript-h"></h2><button type="button" class="btn ghost" id="skript-close"><span aria-hidden="true">✕</span><span class="sr">Schließen</span></button></div>
+  <div class="skript"><nav id="skript-nav" aria-label="Inhalt des Skripts"></nav><article id="skript-body"></article></div>
+</dialog>

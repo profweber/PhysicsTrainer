@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PhysicsTrainer</title>
+<meta name="description" content="Physik-Übungen mit Schreibfeld, Foto-Upload, automatischer Ergebnisprüfung und KI-Tutor (Vorführprototyp, Hochschule Trier)">
+<link rel="stylesheet" href="ohne-tutor/fonts/fonts.css">
+<style>
+  :root {
+    --paper: #edf1ef; --sheet: #fbfcfb; --ink: #17242c; --muted: #586972; --line: #cbd6d2;
+    --accent: #2344c4; --accent-ink: #ffffff; --grid: rgba(23, 36, 44, .045); --ok: #1d7a47; --warn: #8a5a00;
+    --font-display: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+    --font-body: "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #0e1417; --sheet: #151d21; --ink: #e1e8e5; --muted: #93a39d; --line: #283439;
+            --accent: #93a8ff; --accent-ink: #0e1417; --grid: rgba(225, 232, 229, .035); --ok: #6fcf97; --warn: #f0b75a; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+    background-color: var(--paper); color: var(--ink); font: 16px/1.55 var(--font-body);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 8px 8px;
+  }
+  main { width: min(640px, 100%); background: var(--sheet); border: 1.5px solid var(--ink); }
+  header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; border-bottom: 1.5px solid var(--ink); }
+  .mark { display: grid; place-items: center; padding: 8px 16px; border-right: 1.5px solid var(--ink); font: 700 24px/1 var(--font-display); letter-spacing: .04em; }
+  .mark span { display: block; font-size: 10px; letter-spacing: .14em; color: var(--muted); margin-top: 4px; font-weight: 600; min-height: 1em; }
+  .name { padding: 10px 16px; min-width: 0; }
+  h1 { margin: 0; font: 700 26px/1.1 var(--font-display); letter-spacing: .01em; }
+  .name p { margin: 3px 0 0; color: var(--muted); font-size: 14px; }
+  .lang { display: flex; align-items: center; padding: 0 12px; border-left: 1px solid var(--line); }
+  .lang button { border: 1px solid var(--line); background: transparent; color: inherit; font: 600 13px/1 var(--font-body); padding: 7px 9px; cursor: pointer; }
+  .lang button + button { border-left: 0; }
+  .lang button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+  .body { padding: 20px 20px 22px; }
+  .lead { margin: 0 0 14px; font-size: 17px; }
+  ul { margin: 0 0 18px; padding-left: 1.2em; display: grid; gap: 4px; }
+  .cta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px 18px; border-radius: 6px;
+         background: var(--accent); color: var(--accent-ink); font: 700 19px/1.2 var(--font-display); letter-spacing: .02em; text-decoration: none; }
+  .cta:hover { filter: brightness(1.08); }
+  .note { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 6px; font-size: 15px; }
+  .note p { margin: 0 0 6px; } .note p:last-child { margin: 0; }
+  .note ol { margin: 0 0 8px; padding-left: 22px; display: grid; gap: 6px; }
+  .note .small { color: var(--muted); font-size: 14px; }
+  .howto { margin: 10px 0 0; border: 1px solid var(--line); border-radius: 6px; font-size: 15px; }
+  .howto summary { cursor: pointer; padding: 10px 14px; font-weight: 600; color: var(--accent); }
+  .howto ol { margin: 0; padding: 0 16px 0 36px; display: grid; gap: 6px; }
+  .howto p { margin: 10px 14px 12px; color: var(--muted); font-size: 14px; }
+  .status { margin: 0 0 18px; padding: 12px 14px; border: 1.5px solid var(--line); border-left-width: 6px; border-radius: 6px; font-size: 15px; }
+  .status.ok { border-color: var(--ok); }
+  .status.new { border-color: var(--warn); }
+  .status h2 { margin: 0 0 6px; font: 700 18px/1.25 var(--font-display); }
+  .status p { margin: 0 0 6px; } .status p:last-child { margin: 0; }
+  .status ul, .status ol { margin: 0 0 10px; padding-left: 22px; display: grid; gap: 4px; }
+  .alt { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: 15px; }
+  .alt a { color: var(--accent); font-weight: 600; }
+  footer { padding: 10px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 480px) {
+    header { grid-template-columns: auto minmax(0, 1fr); }
+    .lang { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); padding: 8px 12px; }
+    h1 { font-size: 22px; } .mark { padding: 8px 12px; font-size: 20px; }
+    .body { padding: 16px; } .lead { font-size: 16px; }
+  }
+
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="mark" aria-hidden="true">PT<span>v1.0</span></div>
+    <div class="name">
+      <h1>PhysicsTrainer</h1>
+      <p>Übungen zum Skript „Physik für Ingenieurinnen und Ingenieure“</p>
+    </div>
+  </header>
+
+  <div class="body">
+    <p class="lead">Physik üben – mit Stift, Foto oder Tastatur, direkt im Browser.</p>
+    <ul>
+      <li>Aufgaben zu Kinematik, Dynamik, Thermodynamik und Spezieller Relativitätstheorie, in drei Schwierigkeitsstufen</li>
+      <li>Jede Aufgabe mit eigenen Zahlen – abschreiben hilft nicht, wiederholen schon</li>
+      <li>Rechenweg im Schreibfeld (Tablet mit Stift) oder als Foto vom Papier</li>
+      <li>Zwischen- und Endergebnisse mit Einheit – automatisch geprüft, typische Fehler wie Vorzeichen, Zehnerpotenz oder Faktor 2 werden erkannt</li>
+      <li>KI-Tutor, der den handschriftlichen Rechenweg liest, den ersten Fehler findet und Tipps gibt, ohne die Lösung zu verraten</li>
+    </ul>
+    <a class="cta" href="https://claude.ai/artifact/8RCA5axkuq7qL9z5iaBoFC">PhysicsTrainer öffnen <span aria-hidden="true">→</span></a>
+    <div class="note">
+      <p><b>So starten Sie – einmalig, in einer Minute:</b></p>
+      <ol>
+        <li><b>PhysicsTrainer öffnen</b> (Knopf oben). Er läuft auf claude.ai; Sie brauchen ein kostenloses Claude-Konto (Anleitung unten).</li>
+        <li>Ganz oben im Fenster, in der Leiste <b>über</b> dem Trainer, steht links der Titel „PhysicsTrainer“. Dort auf <b>„Kopieren“</b> klicken. Nur in Ihrer eigenen Kopie lässt claude.ai den KI-Tutor zu.</li>
+        <li>In Ihrer Kopie üben und ein <b>Lesezeichen</b> darauf setzen. Bei Ihrer ersten Anfrage an den Tutor fragt Claude einmal, ob die Seite Ihr Konto nutzen und Bilder senden darf – bitte erlauben.</li>
+      </ol>
+      <p class="small">Der KI-Tutor nutzt Ihr eigenes Konto und Kontingent; Bilder Ihres Rechenwegs sieht er nur, wenn Sie ihn prüfen lassen. Fortschritt und Schreibfeld werden nur in Ihrem Browser gespeichert.</p>
+    </div>
+    <details class="howto">
+      <summary>Noch kein Claude-Konto? So legen Sie eines an</summary>
+      <ol>
+        <li>Klicken Sie oben auf <b>PhysicsTrainer öffnen</b> oder öffnen Sie <a href="https://claude.ai" rel="noopener">claude.ai</a>. Ohne Anmeldung erscheint dort die Anmeldeseite.</li>
+        <li>Melden Sie sich mit Ihrem <b>Google-Konto</b> an oder geben Sie Ihre <b>E-Mail-Adresse</b> ein (z.B. die der Hochschule). Sie bekommen dann einen Anmeldelink per E-Mail – ein Passwort gibt es nicht.</li>
+        <li>Beim ersten Mal bestätigen Sie Ihre <b>Handynummer</b> mit einem Code per SMS (Festnetz- und Internet-Telefonnummern funktionieren nicht).</li>
+        <li>Der kostenlose Plan genügt. Danach öffnet sich der PhysicsTrainer – falls nicht, klicken Sie hier einfach noch einmal auf den Knopf. Weiter geht es mit Schritt 2 oben („Kopieren“).</li>
+      </ol>
+      <p>Voraussetzung ist ein Mindestalter von 18 Jahren. Das Konto besteht bei Anthropic, dem Anbieter von Claude; es gelten dessen Nutzungsbedingungen und Datenschutzhinweise. Wer das nicht möchte, nutzt die Version ohne KI-Tutor (unten).</p>
+    </details>
+    <p class="alt">Ohne Claude-Konto: <a href="ohne-tutor/">Version ohne KI-Tutor</a> – alle Aufgaben, Schreibfeld und Ergebnisprüfung, vollständig in Ihrem Browser, keine Daten an Dritte.</p>
+  </div>
+
+  <footer>Vorführprototyp · Hochschule Trier · PhysicsTrainer v1.0 · <a href="https://github.com/profweber/PhysicsTrainer">GitHub</a></footer>
+</main>
+</body>
+</html>
